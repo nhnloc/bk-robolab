@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BK-RoboLab</title>
+  <meta name="description" content="BK-RoboLab — virtual robotics lab for teaching (simulation, not affiliated with Yaskawa).">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23006b85'/%3E%3Cpath d='M7 9v14M7 16h5M12 9v14M20 9v14M20 16l6-7M20 16l6 7' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <script>
+    // Áp theme + ngôn ngữ sớm để tránh nháy
+    try { var th = localStorage.getItem('bk.theme'); if (th) document.documentElement.dataset.theme = th; if (localStorage.getItem('bk.lang') === '"en"') document.documentElement.lang = 'en'; } catch (e) {}
+  </script>
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/studio.css">
+  <link rel="stylesheet" href="styles/machine.css">
+  <link rel="stylesheet" href="styles/robot.css">
+</head>
+<body>
+  <div id="app" class="app"><div class="boot">BK-RoboLab…</div></div>
+  <noscript>BK-RoboLab cần JavaScript · BK-RoboLab requires JavaScript.</noscript>
+  <script type="module" src="src/app/main.js"></script>
+</body>
+</html>

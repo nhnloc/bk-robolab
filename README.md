@@ -1,0 +1,52 @@
+# BK-RoboLab — Phòng thí nghiệm robot ảo
+
+Mô phỏng các bài thí nghiệm của học phần **Thí nghiệm Kỹ thuật Robot** (robot Yaskawa MotoMINI + YRC1000micro, machine controller MP3300, servo Σ-7) chạy hoàn toàn trên trình duyệt: teach pendant ảo, MPE720 ảo (Ladder + Motion), trạm 3D dựng bằng FreeCAD, chấm bài tự động. Cùng hạ tầng với BK-AutoLab (PLC). Phục vụ giảng dạy; không liên kết với Yaskawa.
+
+## Chạy thử
+
+```bash
+python3 -m http.server 8000
+```
+Mở http://localhost:8000, tự đăng ký (Họ tên, Lớp, MSSV). Máy không có WebGL hiện sơ đồ 2D (nhìn trên + nhìn ngang) thay cho 3D.
+
+## Bài lab (giai đoạn 1: Bài 1–3 của tài liệu gốc)
+
+| Lab | Nội dung | Trạm | Công cụ |
+|---|---|---|---|
+| R01 | Vận hành bằng tay: servo, jog JOINT/CARTESIAN/TOOL, gắp–thả bằng tay | MotoMINI + pallet | Pendant (chấm theo thao tác thực tế) |
+| R02 | Dạy điểm, job INFORM: MAIN gọi PICK/PLACE, xếp chồng | MotoMINI + pallet | Pendant |
+| R03 | Robot + I/O: công tắc I4–I7 chọn vật, xung đèn Q4/Q5 | MotoMINI + pallet | Pendant |
+| R04 | MP3300: thanh ghi, kiểu dữ liệu, ladder băng tải | Mechatro | MPE720 |
+| R05 | Bắt tay robot ↔ MC qua I/O (DO_01, DO_02, DI_12) | Mechatro | Pendant + MPE720 |
+| R06 | Ethernet MC → robot: 218IFD, khung High-Speed Ethernet, MSG-SNDE | Mechatro | Pendant + MPE720 |
+| R07 | Servo mâm xoay: về gốc kiểu 19, MPM001/MPM002, MSEE, lỗi & reset | Mechatro | Pendant + MPE720 |
+| R08 | Thanh trượt B/C: giới hạn mềm, về gốc C→B, chuỗi GL, Test Run | Mechatro | Pendant + MPE720 |
+| R09 | Đồ án: hệ luân chuyển vật hoàn chỉnh | Mechatro | Pendant + MPE720 |
+
+R10 (robot – máy tính, viết bằng JavaScript) và R11 (vision) là giai đoạn sau; lõi giao thức High-Speed Ethernet (`src/robot/hse.js`) đã có sẵn cho R10.
+
+R06–R09 tự kế thừa chương trình robot/MC của lab trước khi sinh viên mở lần đầu.
+
+## Kiểm thử
+
+```bash
+node tests/robolab.test.mjs   # động học, INFORM, motion, khung Ethernet; lời giải mẫu mọi lab = 100/100
+node tests/plc.test.mjs       # lõi soft-PLC (ladder dùng cho MP3300)
+```
+Lời giải mẫu ở `private/solutions.js` (không đưa lên git).
+
+## Cấu trúc
+
+- `src/robot/` động học MotoMINI (`kinematics.js`), ngôn ngữ INFORM (`inform.js`), bộ điều khiển YRC1000micro (`controller.js`), High-Speed Ethernet Server (`hse.js`)
+- `src/mc/` MP3300: trục servo (`axis.js`), ngôn ngữ Motion (`motion.js`), MSEE / MSG-SNDE / biến trục (`mp3300.js`); ladder dùng lại `src/plc/`
+- `src/sim/` bố trí trạm (`layout.js`), vật lý trạm (`cell.js`), đồng hồ (`runtime.js`)
+- `src/labs/` nội dung lab, bài giảng (`lectures.js`), chấm bài (`grader.js`)
+- `src/app/robot/` teach pendant, trạm; `src/app/mpe/` MPE720; `src/app/studio/` trình soạn ladder
+- `tools/freecad/` script dựng mô hình (`motomini_robot.py`, `motomini.py`, `mechatro.py`) → `assets/models/*.glb`
+- `docs/CONTRACT.md` đặc tả kỹ thuật
+
+## Ghi chú
+
+- Mô hình MotoMINI hiện là mô hình tham số dựng trong FreeCAD theo kích thước khớp thật (165/165/40 mm). Có file STEP chính hãng thì có thể thay hình học, giữ nguyên tên node và gốc trục.
+- Giao diện robot/MPE720 hiện chỉ có tiếng Việt (nút EN đổi phần khung chung và tên lab).
+- Mật khẩu giảng viên dùng chung `data/teacher.json` chép từ BK-AutoLab.

@@ -1,0 +1,1047 @@
+{
+ "units": "m",
+ "up": "Y",
+ "notes": {
+  "bbox": "bbox in three.js metres, Y-up (FreeCAD (x,y,z) mm -> (x, z, -y)/1000); bboxFC in FreeCAD mm Z-up",
+  "axisFC": "FreeCAD axes (Z-up); rotation sign = right-hand rule about axisFC",
+  "belt": "belt nodes carry TEXCOORD_0: u = metres along uvAxisFC (direction of travel); scroll texture offset.x by +speed*t (m/s) to move material along uvAxisFC",
+  "sensor": "sen_<TAG> node origin = LED position; mesh is a small LED sphere (material \"led\")",
+  "lamp": "static_lamp_<color> = stack-light segments (optional to light up; signal = suggested source)",
+  "refs": "reference points in FreeCAD mm (Z-up) for spawning procedural items"
+ },
+ "machines": {
+  "motomini": {
+   "file": "motomini.glb",
+   "title": "Trạm MotoMINI - Lab 1",
+   "accent": "#0B4EA2",
+   "bbox": [
+    [
+     -0.75,
+     -0.016,
+     -0.65
+    ],
+    [
+     0.85,
+     1.062,
+     0.8
+    ]
+   ],
+   "bboxUnits": "m (three.js, Y-up)",
+   "bboxFC": [
+    [
+     -750.0,
+     -800.0,
+     -16.0
+    ],
+    [
+     850.0,
+     650.0,
+     1062.0
+    ]
+   ],
+   "camera": {
+    "pos": [
+     -0.566,
+     1.817,
+     1.307
+    ],
+    "target": [
+     0.0,
+     0.89,
+     0.02
+    ],
+    "fov": 45.0
+   },
+   "triangles": 14756,
+   "bytes": 531944,
+   "nodes": {
+    "link_S": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      0,
+      1
+     ],
+     "travel": 1
+    },
+    "link_L": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      1,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_S"
+    },
+    "link_U": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      -1,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_L"
+    },
+    "link_R": {
+     "type": "rotate",
+     "axisFC": [
+      -1,
+      0,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_U"
+    },
+    "link_B": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      1,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_R"
+    },
+    "link_T": {
+     "type": "rotate",
+     "axisFC": [
+      -1,
+      0,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_B"
+    },
+    "out_Q4": {
+     "type": "output",
+     "tag": "Q4",
+     "color": "#e53935"
+    },
+    "btn_SW4": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "SW4",
+     "kind": "toggle"
+    },
+    "out_Q5": {
+     "type": "output",
+     "tag": "Q5",
+     "color": "#ffb300"
+    },
+    "btn_SW5": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "SW5",
+     "kind": "toggle"
+    },
+    "out_Q6": {
+     "type": "output",
+     "tag": "Q6",
+     "color": "#43a047"
+    },
+    "btn_SW6": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "SW6",
+     "kind": "toggle"
+    },
+    "out_Q7": {
+     "type": "output",
+     "tag": "Q7",
+     "color": "#1e88e5"
+    },
+    "btn_SW7": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "SW7",
+     "kind": "toggle"
+    }
+   },
+   "refs": {
+    "baseFC": [
+     0,
+     0,
+     750.0
+    ],
+    "tcpZeroFC": [
+     275.0,
+     0,
+     1018.0
+    ],
+    "flangeX": 225.0,
+    "axesFC": {
+     "link_S": {
+      "axis": [
+       0,
+       0,
+       1
+      ],
+      "point": [
+       0.0,
+       0.0,
+       750.0
+      ]
+     },
+     "link_L": {
+      "axis": [
+       0,
+       1,
+       0
+      ],
+      "point": [
+       20.0,
+       0.0,
+       853.0
+      ]
+     },
+     "link_U": {
+      "axis": [
+       0,
+       -1,
+       0
+      ],
+      "point": [
+       20.0,
+       0.0,
+       1018.0
+      ]
+     },
+     "link_R": {
+      "axis": [
+       -1,
+       0,
+       0
+      ],
+      "point": [
+       20.0,
+       0.0,
+       1018.0
+      ]
+     },
+     "link_B": {
+      "axis": [
+       0,
+       1,
+       0
+      ],
+      "point": [
+       185.0,
+       0.0,
+       1018.0
+      ]
+     },
+     "link_T": {
+      "axis": [
+       -1,
+       0,
+       0
+      ],
+      "point": [
+       185.0,
+       0.0,
+       1018.0
+      ]
+     }
+    },
+    "paletteTopZ": 760.0,
+    "paletteCentre": [
+     230,
+     0
+    ],
+    "paletteSize": [
+     300,
+     340
+    ],
+    "cellsFC": {
+     "A1": [
+      170,
+      110,
+      760.0
+     ],
+     "A2": [
+      230,
+      110,
+      760.0
+     ],
+     "A3": [
+      290,
+      110,
+      760.0
+     ],
+     "B": [
+      190,
+      -110,
+      760.0
+     ],
+     "C": [
+      270,
+      -110,
+      760.0
+     ]
+    },
+    "switchesFC": {
+     "SW4": [
+      -280.0,
+      252.4,
+      841.8
+     ],
+     "SW5": [
+      -226.0,
+      252.4,
+      841.8
+     ],
+     "SW6": [
+      -172.0,
+      252.4,
+      841.8
+     ],
+     "SW7": [
+      -118.0,
+      252.4,
+      841.8
+     ]
+    }
+   }
+  },
+  "mechatro": {
+   "file": "mechatro.glb",
+   "title": "Trạm cơ điện tử - Lab 2-3",
+   "accent": "#0B4EA2",
+   "bbox": [
+    [
+     -0.75,
+     -0.016,
+     -0.65
+    ],
+    [
+     0.85,
+     1.272,
+     0.8
+    ]
+   ],
+   "bboxUnits": "m (three.js, Y-up)",
+   "bboxFC": [
+    [
+     -750.0,
+     -800.0,
+     -16.0
+    ],
+    [
+     850.0,
+     650.0,
+     1272.0
+    ]
+   ],
+   "camera": {
+    "pos": [
+     -0.538,
+     1.924,
+     1.386
+    ],
+    "target": [
+     0.05,
+     0.962,
+     0.05
+    ],
+    "fov": 45.0
+   },
+   "triangles": 34778,
+   "bytes": 1236876,
+   "nodes": {
+    "link_S": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      0,
+      1
+     ],
+     "travel": 1
+    },
+    "link_L": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      1,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_S"
+    },
+    "link_U": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      -1,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_L"
+    },
+    "link_R": {
+     "type": "rotate",
+     "axisFC": [
+      -1,
+      0,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_U"
+    },
+    "link_B": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      1,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_R"
+    },
+    "link_T": {
+     "type": "rotate",
+     "axisFC": [
+      -1,
+      0,
+      0
+     ],
+     "travel": 1,
+     "parent": "link_B"
+    },
+    "belt_cv": {
+     "type": "belt",
+     "uvAxisFC": [
+      1,
+      0,
+      0
+     ]
+    },
+    "sen_DI_11": {
+     "type": "sensor"
+    },
+    "table_A": {
+     "type": "rotate",
+     "axisFC": [
+      0,
+      0,
+      1
+     ],
+     "travel": 1
+    },
+    "sen_DI_10": {
+     "type": "sensor"
+    },
+    "sen_DI_04": {
+     "type": "sensor"
+    },
+    "sen_DI_05": {
+     "type": "sensor"
+    },
+    "sen_DI_06": {
+     "type": "sensor"
+    },
+    "slide_B": {
+     "type": "translate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 1
+    },
+    "sen_DI_07": {
+     "type": "sensor",
+     "parent": "slide_B"
+    },
+    "sen_DI_08": {
+     "type": "sensor",
+     "parent": "slide_B"
+    },
+    "sen_DI_09": {
+     "type": "sensor",
+     "parent": "slide_B"
+    },
+    "slide_C": {
+     "type": "translate",
+     "axisFC": [
+      0,
+      0,
+      1
+     ],
+     "travel": 1,
+     "parent": "slide_B"
+    },
+    "out_PQ0": {
+     "type": "output",
+     "tag": "PQ0",
+     "color": "#e53935"
+    },
+    "btn_P0": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P0",
+     "kind": "toggle"
+    },
+    "out_PQ1": {
+     "type": "output",
+     "tag": "PQ1",
+     "color": "#ffb300"
+    },
+    "btn_P1": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P1",
+     "kind": "toggle"
+    },
+    "out_PQ2": {
+     "type": "output",
+     "tag": "PQ2",
+     "color": "#43a047"
+    },
+    "btn_P2": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P2",
+     "kind": "toggle"
+    },
+    "out_PQ3": {
+     "type": "output",
+     "tag": "PQ3",
+     "color": "#1e88e5"
+    },
+    "btn_P3": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P3",
+     "kind": "toggle"
+    },
+    "out_PQ4": {
+     "type": "output",
+     "tag": "PQ4",
+     "color": "#e53935"
+    },
+    "btn_P4": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P4",
+     "kind": "toggle"
+    },
+    "out_PQ5": {
+     "type": "output",
+     "tag": "PQ5",
+     "color": "#ffb300"
+    },
+    "btn_P5": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P5",
+     "kind": "toggle"
+    },
+    "out_PQ6": {
+     "type": "output",
+     "tag": "PQ6",
+     "color": "#43a047"
+    },
+    "btn_P6": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P6",
+     "kind": "toggle"
+    },
+    "out_PQ7": {
+     "type": "output",
+     "tag": "PQ7",
+     "color": "#1e88e5"
+    },
+    "btn_P7": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "P7",
+     "kind": "toggle"
+    },
+    "btn_START": {
+     "type": "translate",
+     "axisFC": [
+      0.0,
+      0.5547,
+      -0.8321
+     ],
+     "travel": 4,
+     "button": "START",
+     "kind": "momentary"
+    },
+    "btn_STOP": {
+     "type": "translate",
+     "axisFC": [
+      0.0,
+      0.5547,
+      -0.8321
+     ],
+     "travel": 4,
+     "button": "STOP",
+     "kind": "momentary"
+    },
+    "btn_SERVO_ON": {
+     "type": "translate",
+     "axisFC": [
+      0.0,
+      0.5547,
+      -0.8321
+     ],
+     "travel": 4,
+     "button": "SERVO_ON",
+     "kind": "momentary"
+    },
+    "btn_ROBOT_ON": {
+     "type": "translate",
+     "axisFC": [
+      0.0,
+      0.5547,
+      -0.8321
+     ],
+     "travel": 4,
+     "button": "ROBOT_ON",
+     "kind": "momentary"
+    },
+    "out_XQ0": {
+     "type": "output",
+     "tag": "XQ0",
+     "color": "#e53935"
+    },
+    "btn_X0": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X0",
+     "kind": "toggle"
+    },
+    "out_XQ1": {
+     "type": "output",
+     "tag": "XQ1",
+     "color": "#ffb300"
+    },
+    "btn_X1": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X1",
+     "kind": "toggle"
+    },
+    "out_XQ2": {
+     "type": "output",
+     "tag": "XQ2",
+     "color": "#43a047"
+    },
+    "btn_X2": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X2",
+     "kind": "toggle"
+    },
+    "out_XQ3": {
+     "type": "output",
+     "tag": "XQ3",
+     "color": "#1e88e5"
+    },
+    "btn_X3": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X3",
+     "kind": "toggle"
+    },
+    "out_XQ4": {
+     "type": "output",
+     "tag": "XQ4",
+     "color": "#e53935"
+    },
+    "btn_X4": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X4",
+     "kind": "toggle"
+    },
+    "out_XQ5": {
+     "type": "output",
+     "tag": "XQ5",
+     "color": "#ffb300"
+    },
+    "btn_X5": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X5",
+     "kind": "toggle"
+    },
+    "out_XQ6": {
+     "type": "output",
+     "tag": "XQ6",
+     "color": "#43a047"
+    },
+    "btn_X6": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X6",
+     "kind": "toggle"
+    },
+    "out_XQ7": {
+     "type": "output",
+     "tag": "XQ7",
+     "color": "#1e88e5"
+    },
+    "btn_X7": {
+     "type": "rotate",
+     "axisFC": [
+      1,
+      0,
+      0
+     ],
+     "travel": 40,
+     "button": "X7",
+     "kind": "toggle"
+    }
+   },
+   "refs": {
+    "baseFC": [
+     0,
+     0,
+     750.0
+    ],
+    "tcpZeroFC": [
+     275.0,
+     0,
+     1018.0
+    ],
+    "flangeX": 225.0,
+    "axesFC": {
+     "link_S": {
+      "axis": [
+       0,
+       0,
+       1
+      ],
+      "point": [
+       0.0,
+       0.0,
+       750.0
+      ]
+     },
+     "link_L": {
+      "axis": [
+       0,
+       1,
+       0
+      ],
+      "point": [
+       20.0,
+       0.0,
+       853.0
+      ]
+     },
+     "link_U": {
+      "axis": [
+       0,
+       -1,
+       0
+      ],
+      "point": [
+       20.0,
+       0.0,
+       1018.0
+      ]
+     },
+     "link_R": {
+      "axis": [
+       -1,
+       0,
+       0
+      ],
+      "point": [
+       20.0,
+       0.0,
+       1018.0
+      ]
+     },
+     "link_B": {
+      "axis": [
+       0,
+       1,
+       0
+      ],
+      "point": [
+       185.0,
+       0.0,
+       1018.0
+      ]
+     },
+     "link_T": {
+      "axis": [
+       -1,
+       0,
+       0
+      ],
+      "point": [
+       185.0,
+       0.0,
+       1018.0
+      ]
+     }
+    },
+    "conveyor": {
+     "y": 180.0,
+     "x": [
+      -330.0,
+      240.0
+     ],
+     "width": 70.0,
+     "topZ": 790.0,
+     "stopperX": [
+      240,
+      250
+     ],
+     "photoEyeX": 224
+    },
+    "rotaryTable": {
+     "centreFC": [
+      250.0,
+      -230.0,
+      790.0
+     ],
+     "radius": 100.0,
+     "slotRadius": 75.0,
+     "slotDia": 36.0,
+     "slotAnglesDeg": [
+      135,
+      225,
+      315,
+      45
+     ],
+     "slotsFC": [
+      [
+       197.0,
+       -177.0,
+       790.0
+      ],
+      [
+       197.0,
+       -283.0,
+       790.0
+      ],
+      [
+       303.0,
+       -283.0,
+       790.0
+      ],
+      [
+       303.0,
+       -177.0,
+       790.0
+      ]
+     ]
+    },
+    "gantry": {
+     "cRestFC": [
+      417.0,
+      -283.0
+     ],
+     "magnetBottomRestZ": 915.0,
+     "magnetDia": 24,
+     "rangeB": [
+      -292,
+      15
+     ],
+     "rangeC": [
+      -125,
+      15
+     ]
+    },
+    "binFC": {
+     "centre": [
+      400.0,
+      -283.0
+     ],
+     "size": [
+      90,
+      90
+     ],
+     "floorZ": 760.0,
+     "wallTopZ": 820.0
+    },
+    "buttonsFC": {
+     "P0": [
+      -464.0,
+      -383.2,
+      840.1
+     ],
+     "P1": [
+      -440.0,
+      -383.2,
+      840.1
+     ],
+     "P2": [
+      -416.0,
+      -383.2,
+      840.1
+     ],
+     "P3": [
+      -392.0,
+      -383.2,
+      840.1
+     ],
+     "P4": [
+      -368.0,
+      -383.2,
+      840.1
+     ],
+     "P5": [
+      -344.0,
+      -383.2,
+      840.1
+     ],
+     "P6": [
+      -320.0,
+      -383.2,
+      840.1
+     ],
+     "P7": [
+      -296.0,
+      -383.2,
+      840.1
+     ],
+     "X0": [
+      -244.0,
+      -402.4,
+      827.3
+     ],
+     "X1": [
+      -220.0,
+      -402.4,
+      827.3
+     ],
+     "X2": [
+      -196.0,
+      -402.4,
+      827.3
+     ],
+     "X3": [
+      -172.0,
+      -402.4,
+      827.3
+     ],
+     "X4": [
+      -148.0,
+      -402.4,
+      827.3
+     ],
+     "X5": [
+      -124.0,
+      -402.4,
+      827.3
+     ],
+     "X6": [
+      -100.0,
+      -402.4,
+      827.3
+     ],
+     "X7": [
+      -76.0,
+      -402.4,
+      827.3
+     ]
+    }
+   }
+  }
+ }
+}
