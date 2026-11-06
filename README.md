@@ -22,8 +22,10 @@ Mở http://localhost:8000, tự đăng ký (Họ tên, Lớp, MSSV). Máy khôn
 | R07 | Servo mâm xoay: về gốc kiểu 19, MPM001/MPM002, MSEE, lỗi & reset | Mechatro | Pendant + MPE720 |
 | R08 | Thanh trượt B/C: giới hạn mềm, về gốc C→B, chuỗi GL, Test Run | Mechatro | Pendant + MPE720 |
 | R09 | Đồ án: hệ luân chuyển vật hoàn chỉnh | Mechatro | Pendant + MPE720 |
+| R10 | Giao tiếp robot – máy tính: tự viết thư viện High-Speed Ethernet (JavaScript), đọc vị trí, xung → độ, động học thuận, jog | MotoMINI + camera | PC App + Pendant |
+| R11 | Vision: nhận dạng vật (ngưỡng, vùng liên thông, mômen), hiệu chuẩn affine bằng 3 điểm mốc, gửi P010/B000 cho robot, bù góc | MotoMINI + camera | PC App + Pendant |
 
-R10 (robot – máy tính, viết bằng JavaScript) và R11 (vision) là giai đoạn sau; lõi giao thức High-Speed Ethernet (`src/robot/hse.js`) đã có sẵn cho R10.
+R10–R11 thay Qt C++ của tài liệu gốc bằng JavaScript chạy ngay trong trình duyệt (`src/pc/runner.js`); mã sinh viên giao tiếp với robot ảo qua `udp.send()` đúng khung UDP thật.
 
 R06–R09 tự kế thừa chương trình robot/MC của lab trước khi sinh viên mở lần đầu.
 
@@ -37,6 +39,7 @@ Lời giải mẫu ở `private/solutions.js` (không đưa lên git).
 
 ## Cấu trúc
 
+- `src/pc/` chạy chương trình máy tính của sinh viên (R10–R11)
 - `src/robot/` động học MotoMINI (`kinematics.js`), ngôn ngữ INFORM (`inform.js`), bộ điều khiển YRC1000micro (`controller.js`), High-Speed Ethernet Server (`hse.js`)
 - `src/mc/` MP3300: trục servo (`axis.js`), ngôn ngữ Motion (`motion.js`), MSEE / MSG-SNDE / biến trục (`mp3300.js`); ladder dùng lại `src/plc/`
 - `src/sim/` bố trí trạm (`layout.js`), vật lý trạm (`cell.js`), đồng hồ (`runtime.js`)

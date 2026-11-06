@@ -1,4 +1,4 @@
-// Bài giảng, chuẩn đầu ra (outcomes) và câu hỏi nhanh cho từng bài lab robot (R01–R09).
+// Bài giảng, chuẩn đầu ra (outcomes) và câu hỏi nhanh cho từng bài lab robot (R01–R11).
 // body: Markdown rút gọn — đoạn văn, "### ", "- ", "1. ", **đậm**, `mã`, bảng | a | b |.
 // Nội dung bám theo bản mô phỏng (src/robot, src/mc, src/sim); chỗ khác phần cứng thật có ghi chú.
 
@@ -1000,6 +1000,333 @@ Báo cáo đồ án gồm: sơ đồ tín hiệu giữa các thiết bị, lưu 
       { q: 'Vì sao robot và thanh trượt có thể làm việc song song?', options: ['Vì dùng hai bộ điều khiển', 'Vì robot đặt ở khe 135° còn thanh trượt lấy ở khe 225° trên mâm 4 khe', 'Vì băng tải chạy liên tục', 'Không thể song song'], answer: 1, explain: 'Hai vị trí làm việc khác nhau trên mâm; mỗi lần quay 90° chuyển vật từ vị trí robot sang vị trí thanh trượt.' },
       { q: 'Nhấn STOP khi hệ đang chạy thì nên…', options: ['Tắt servo tất cả các trục ngay', 'Băng tải dừng ngay, robot và thanh trượt làm nốt vật đang cầm', 'Robot thả vật tại chỗ', 'Reset MC'], answer: 1, explain: 'Dừng có kiểm soát: ngừng cấp vật mới, không bỏ dở vật đang xử lý.' },
       { q: 'Thời gian chu kỳ của hệ được định nghĩa là…', options: ['Thời gian quét ladder', 'Khoảng thời gian giữa hai vật liên tiếp vào thùng', 'Thời gian robot đi từ P000 tới P005', 'Thời gian về gốc'], answer: 1, explain: 'Chu kỳ đo theo sản lượng ở đầu ra của hệ.' },
+    ],
+  },
+
+  /* ======================= PHẦN 4 — ROBOT, MÁY TÍNH VÀ VISION ======================= */
+  R10: {
+    durationMin: 45,
+    outcomes: [
+      { code: 'R10.1', text: 'Giải thích mô hình client–server của High-Speed Ethernet Server (UDP cổng 10040) trên YRC1000micro và vai trò của Request ID.' },
+      { code: 'R10.2', text: 'Tạo đúng khung lệnh 32 byte header + phần dữ liệu (little-endian) bằng DataView / Uint8Array và đọc status, added status của phản hồi.' },
+      { code: 'R10.3', text: 'Bật/tắt servo, đọc vị trí robot dạng Descartes (µm, 0,0001°) và dạng xung; đổi xung → độ theo tỉ lệ của MotoMINI.' },
+      { code: 'R10.4', text: 'Tính động học thuận của MotoMINI và kiểm chứng với vị trí đọc từ robot (sai lệch < 0,5 mm).' },
+      { code: 'R10.5', text: 'Gửi lệnh di chuyển thẳng tương đối (0x8A, instance 3) và gỡ lỗi giao tiếp bằng nhật ký hex.' },
+    ],
+    sections: [
+      {
+        title: '1. Giao thức High-Speed Ethernet Server',
+        body: `High-Speed Ethernet Server là giao thức tầng ứng dụng chạy trên **UDP/IP**. Bộ điều khiển YRC1000micro là **server** (trong phòng ảo: \`192.168.1.11\`, cổng **10040**), máy tính là **client**. Mỗi khung yêu cầu client gửi đi được server xử lý và trả đúng **một** khung phản hồi.
+
+Có hai cách lập trình phía máy tính: dùng thư viện MOTOCOM của hãng, hoặc **tự viết thư viện** theo đặc tả khung đã công bố. Bài này chọn cách thứ hai để hiểu từng byte.
+
+### Khác với bản gốc
+Tài liệu gốc viết giao diện bằng Qt C++ / C# (UdpClient, luồng nhận riêng, hàm \`OnYRCDataCallback()\`). Trong phòng ảo bạn viết **JavaScript** ở tab "PC App"; giao diện (Connect, Servo, đọc vị trí, nút X± Y± Z±) đã có sẵn và gọi các hàm của bạn. Môi trường cung cấp:
+
+| Đối tượng | Ý nghĩa |
+|---|---|
+| \`udp.send(ip, port, bytes)\` | Gửi khung, trả \`Promise<Uint8Array>\` là khung phản hồi, hoặc \`null\` nếu không có phản hồi |
+| \`sleep(ms)\` | Chờ (dùng với \`await\`) |
+| \`log(...)\` | Ghi ra nhật ký của PC App |
+
+Vì \`udp.send\` trả luôn phản hồi nên có thể viết tuần tự bằng \`await\`. Ở chương trình thật, phản hồi đến trên luồng nhận riêng: khi đó **Request ID** (byte 11) là thứ duy nhất để ghép phản hồi với yêu cầu — bản gốc lưu \`request_code[id]\` rồi tăng id sau mỗi lệnh.
+
+### Ba khối của thư viện
+- **UDP connection**: mở socket, gửi / nhận byte.
+- **Command generator**: tạo khung cho từng lệnh (\`buildFrame\`).
+- **Communication control**: API cho giao diện (\`setServo\`, \`readCartesian\`, …), kiểm tra lỗi trong phản hồi.`,
+      },
+      {
+        title: '2. Cấu trúc khung lệnh',
+        body: `Khung = **header 32 byte** + **phần dữ liệu** (0…479 byte). Mọi số nhiều byte là **little-endian** (byte thấp trước). Header của khung yêu cầu:
+
+| Byte | Cỡ | Trường | Giá trị |
+|---|---|---|---|
+| 0–3 | 4 | Identifier | "YERC" = \`59 45 52 43\` (đọc dạng uint32 LE: 0x43524559) |
+| 4–5 | 2 | Header size | 0x0020 (32) |
+| 6–7 | 2 | Data size | số byte phần dữ liệu |
+| 8 | 1 | Reserve 1 | 3 |
+| 9 | 1 | Processing division | 1 = điều khiển robot (2 = truyền file) |
+| 10 | 1 | ACK | 0 = yêu cầu |
+| 11 | 1 | Request ID | 0…255, do client đặt |
+| 12–15 | 4 | Block No | 0 |
+| 16–23 | 8 | Reserve 2 | "99999999" (\`39\` × 8) |
+| 24–25 | 2 | Command No | mã lệnh, ví dụ 0x83 |
+| 26–27 | 2 | Instance | đối tượng (số biến, loại vị trí, …) |
+| 28 | 1 | Attribute | thuộc tính |
+| 29 | 1 | Service | 0x01 đọc tất cả, 0x02 ghi tất cả, 0x0E đọc 1, 0x10 ghi 1 |
+| 30–31 | 2 | Padding | 0 |
+
+### Header của khung phản hồi
+Byte 0–23 giống yêu cầu (ACK = 1, cùng Request ID, Block No = 0x80000000), còn byte 24–31 đổi nghĩa:
+
+| Byte | Trường | Ý nghĩa |
+|---|---|---|
+| 24 | Service | service yêu cầu + 0x80 |
+| 25 | **Status** | 0x00 = thành công, khác 0 = lỗi |
+| 26 | Added status size | 0 hoặc 2 |
+| 28–29 | **Added status** | mã lỗi chi tiết (uint16 LE) |
+
+### Ví dụ: bật servo (0x83, instance 2, attribute 1, service 0x10, dữ liệu int32 = 1)
+\`59 45 52 43 20 00 04 00 03 01 00 00 00 00 00 00 39 39 39 39 39 39 39 39 83 00 02 00 01 10 00 00 01 00 00 00\` — 36 byte, Data size = 4.`,
+      },
+      {
+        title: '3. Tạo khung bằng JavaScript và các lệnh dùng trong bài',
+        body: `\`Uint8Array\` là mảng byte; \`DataView\` ghi số nhiều byte vào đúng vị trí với thứ tự byte tùy chọn (tham số cuối \`true\` = little-endian):
+
+- \`dv.setUint32(0, 0x43524559, true)\` → "YERC"; \`dv.setUint16(4, 0x20, true)\`; \`dv.setUint16(6, data.length, true)\`
+- \`frame[8] = 3; frame[9] = 1; frame[11] = requestId++ & 255\`
+- Reserve 2: vòng lặp \`frame[16 + i] = 0x39\`
+- \`dv.setUint16(24, cmd, true); dv.setUint16(26, instance, true); frame[28] = attribute; frame[29] = service\`
+- Phần dữ liệu là danh sách int32: tạo \`new Uint8Array(4 * n)\` rồi \`setInt32(4 * i, Math.round(x), true)\` — DataView tự xử lý số âm (bù 2).
+
+### Các lệnh bản mô phỏng hỗ trợ
+| Lệnh | Instance / Attr / Service | Dữ liệu | Cần REMOTE |
+|---|---|---|---|
+| 0x72 đọc trạng thái | 1 / 1–2 / 0x01, 0x0E | trả 2 int32 (bit chế độ, servo, alarm…) | Không |
+| 0x75 đọc vị trí | **1 = xung**, **101 = Descartes BASE** / 0 / 0x01 | trả 13 int32 | Không |
+| 0x7A biến byte B | số biến / 1 / 0x0E đọc, 0x10 ghi | 1 byte | Không |
+| 0x7F biến vị trí P | số biến / 0 / 0x02 ghi | 13 int32 | Không |
+| 0x83 HOLD / SERVO | 1 HOLD, 2 SERVO / 1 / 0x10 | int32: 1 = ON, 2 = OFF | Có (servo) |
+| 0x86 START job | 1 / 1 / 0x10 | int32 = 1 | Có |
+| 0x8A di chuyển Descartes | 1 MOVJ tuyệt đối, 2 MOVL tuyệt đối, 3 MOVL tương đối / 1 / 0x02 | 26 int32 | Có |
+
+Các lệnh làm **thay đổi trạng thái robot** (servo, START, di chuyển) chỉ được nhận khi chìa khóa pendant ở **REMOTE**; nếu không, phản hồi có status ≠ 0 và added status **0x2060**.
+
+### Lệnh di chuyển 0x8A — 26 số int32
+robot = 1, station = 0, phân loại tốc độ (1 = V, mm/s), tốc độ (đơn vị **0,1 mm/s**: 20 mm/s → 200), hệ tọa độ **16 = BASE**, X Y Z (**µm**), Rx Ry Rz (**0,0001°**), dự trữ ×2, kiểu 0, kiểu mở rộng 0, tool 0, user 0, rồi 9 số 0 (trục ngoài). Với instance 3 (tương đối), X Y Z là độ dời; Rx Ry Rz = 0 để giữ nguyên hướng dụng cụ.`,
+      },
+      {
+        title: '4. Đọc vị trí: Descartes và xung',
+        body: `Lệnh 0x75 trả 13 số int32 (52 byte): kiểu dữ liệu, cấu hình (form), số tool, số user, cấu hình mở rộng, rồi **6 giá trị trục** ở chỉ số 5…10, cuối cùng 2 số của trục 7, 8.
+
+- **Instance 101** (Descartes, kiểu = 16 BASE): chỉ số 5–7 là X, Y, Z tính bằng **µm** (chia 1000 → mm); 8–10 là Rx, Ry, Rz tính bằng **0,0001°** (chia 10000 → độ). Góc theo quy ước Yaskawa: ma trận hướng = Rz·Ry·Rx.
+- **Instance 1** (xung): chỉ số 5–10 là xung encoder của S, L, U, R, B, T.
+
+Đọc: \`const dv = new DataView(d.buffer, d.byteOffset, d.byteLength); dv.getInt32(4 * i, true)\`.
+
+### Đổi xung → độ
+| Khớp | Xung / độ | Ví dụ |
+|---|---|---|
+| S | 34816 / 30 | 34816 xung = 30° |
+| L | 102400 / 90 | 11378 xung ≈ 10° |
+| U | 51200 / 90 | 5120 xung = 9° |
+| R, B, T | 10204 / 30 | 10204 xung = 30° |
+
+Góc (độ) = xung ÷ (xung/độ). Tỉ lệ khác nhau vì tỉ số truyền hộp số mỗi khớp khác nhau.`,
+      },
+      {
+        title: '5. Động học thuận của MotoMINI',
+        body: `Đầu vào: 6 góc khớp (độ). Đầu ra: vị trí TCP [X, Y, Z] trong hệ BASE. Dụng cụ trong bài dài 50 mm theo trục mặt bích.
+
+### Hình học ở tư thế 0 (mọi khớp = 0)
+| Khớp | Hướng trục (dương theo quy tắc bàn tay phải) | Một điểm trên trục (mm) |
+|---|---|---|
+| S | +Z | (0, 0, 0) |
+| L | +Y | (20, 0, 103) |
+| U | −Y | (20, 0, 268) |
+| R | −X | (20, 0, 268) |
+| B | +Y | (185, 0, 268) |
+| T | −X | (185, 0, 268) |
+
+Mặt bích ở x = 225; TCP cách mặt bích 50 mm → **p0 = (275, 0, 268)**.
+
+### Cách 1 — quay điểm TCP quanh từng trục (tích hàm mũ)
+Ở tư thế 0 các trục đã biết. Quay khớp T trước rồi lần lượt B, R, U, L, S — mỗi khớp sau (gần đế hơn) mang theo toàn bộ phần phía ngoài, nên trục của nó vẫn ở vị trí tư thế 0:
+
+1. p = p0
+2. Với i = T, B, R, U, L, S: p ← q_i + Rot(w_i, θ_i)·(p − q_i)
+
+Trong đó Rot(w, θ)·v theo công thức Rodrigues: v·cosθ + (w × v)·sinθ + w·(w·v)·(1 − cosθ). Viết dạng ma trận: T = e^(ξ1θ1)·…·e^(ξ6θ6)·M — đây là **tích các hàm mũ** (product of exponentials); M là tư thế TCP ở 0.
+
+Kiểm tra nhanh: q = 0 → (275, 0, 268); chỉ S = 90° → (0, 275, 268).
+
+### Cách 2 — bảng Denavit–Hartenberg
+Đặt hệ trục cho từng khâu theo quy ước DH, lập bảng (θ, d, a, α) và nhân 6 ma trận A_i. Gốc góc và chiều quay của từng khớp phải khớp với bộ điều khiển (ví dụ U quay theo −Y), nên thường phải cộng hằng số hoặc đổi dấu θ. Kết quả chỉ cần đúng **vị trí TCP**.
+
+So sánh với \`readCartesian()\`: sai lệch < 0,5 mm là đạt. Nếu lệch lớn, thử từng khớp riêng (chỉ một khớp ≠ 0) để tìm khớp sai chiều.`,
+      },
+      {
+        title: '6. Gỡ lỗi giao tiếp',
+        body: `Tab Giám sát / Nhật ký của PC App hiện khung gửi và nhận dạng hex. Dùng \`log()\` in thêm giá trị bạn tính.
+
+| Hiện tượng | Nguyên nhân thường gặp |
+|---|---|
+| \`udp.send\` trả \`null\` | Sai IP hoặc cổng (phải 10040) |
+| added status 0xA000 | Header sai: identifier, header size, reserve 1 = 3, division = 1, reserve 2 "99999999", hoặc Data size ≠ số byte thật |
+| 0x1010 / 0x1011 / 0x1013 | Sai Command No / Instance / Service |
+| 0x1014 / 0x1015 | Thiếu dữ liệu / giá trị dữ liệu sai (ví dụ servo khác 1, 2) |
+| **0x2060** | Robot chưa ở chế độ REMOTE |
+| 0x2070 / 0x2080 | Servo chưa bật / đang có báo động hoặc dừng khẩn |
+| 0x2010 | Robot đang chạy job hoặc đang di chuyển |
+| 0x20A0 | Điểm đích ngoài vùng làm việc |
+| Vị trí sai đúng 1000 lần | Quên đổi µm ↔ mm hoặc 0,0001° ↔ độ |
+| Số rất lớn khi vị trí âm | Đọc bằng \`getUint32\` thay vì \`getInt32\` |
+| Mọi giá trị lộn xộn | Quên tham số \`true\` (little-endian) |
+
+Mẹo: so khung của bạn với ví dụ bật servo ở mục 2 từng byte một.`,
+      },
+    ],
+    quiz: [
+      { q: 'Khung lệnh bật servo (0x83, dữ liệu int32 = 1) dài bao nhiêu byte và trường Data size bằng bao nhiêu?', options: ['32 byte, Data size = 0', '36 byte, Data size = 4', '36 byte, Data size = 36', '33 byte, Data size = 1'], answer: 1, explain: 'Header luôn 32 byte; phần dữ liệu là 1 số int32 = 4 byte. Data size chỉ tính phần dữ liệu.' },
+      { q: 'Muốn gửi X = 225,5 mm trong lệnh 0x8A, 4 byte dữ liệu (theo thứ tự trong khung) là…', options: ['00 03 70 DC', 'DC 70 03 00', 'E1 00 00 00', '00 00 E1 00'], answer: 1, explain: 'X tính bằng µm: 225500 = 0x000370DC, ghi little-endian → DC 70 03 00.' },
+      { q: 'Lệnh 0x75 với instance nào trả về vị trí khớp dạng xung?', options: ['1', '2', '16', '101'], answer: 0, explain: 'Instance 1 = vị trí xung; instance 101 = vị trí Descartes (BASE). 16 là mã kiểu dữ liệu BASE bên trong phần dữ liệu.' },
+      { q: 'Gửi lệnh bật servo khi chìa khóa pendant đang ở PLAY. Phản hồi sẽ là…', options: ['Status 0, servo bật', 'Không có phản hồi', 'Status ≠ 0, added status 0x2060', 'Added status 0xA000'], answer: 2, explain: 'Lệnh làm thay đổi trạng thái robot chỉ được nhận ở REMOTE; 0x2060 = chưa ở chế độ REMOTE.' },
+      { q: 'Khớp U đọc được 5120 xung. Góc khớp U là…', options: ['5,12°', '9°', '10°', '0,9°'], answer: 1, explain: 'Tỉ lệ U là 51200 xung / 90° → 5120 × 90 / 51200 = 9°.' },
+      { q: 'Di chuyển thẳng tương đối với tốc độ 20 mm/s: giá trị phân loại tốc độ và tốc độ trong dữ liệu lệnh 0x8A là…', options: ['0 và 20', '1 và 20', '1 và 200', '0 và 2000'], answer: 2, explain: 'Phân loại 1 = tốc độ V (mm/s), đơn vị 0,1 mm/s nên 20 mm/s → 200. Dùng instance 3 cho di chuyển tương đối.' },
+    ],
+  },
+
+  R11: {
+    durationMin: 50,
+    outcomes: [
+      { code: 'R11.1', text: 'Xử lý ảnh xám dạng mảng: ngưỡng hóa, tách vùng liên thông, lọc vùng nhỏ để tìm vật.' },
+      { code: 'R11.2', text: 'Tính tâm và góc trục dài của vật bằng mômen ảnh; xử lý tính chu kỳ 180° của góc thanh.' },
+      { code: 'R11.3', text: 'Hiệu chuẩn camera – robot bằng biến đổi affine từ 3 điểm mốc và đổi góc ảnh sang góc Rz của robot.' },
+      { code: 'R11.4', text: 'Đồng bộ máy tính với job robot qua biến P và biến B (bắt tay bằng B000) để gắp và đặt vật đúng đồ gá.' },
+      { code: 'R11.5', text: 'Phân tích các nguồn sai số của hệ vision – robot.' },
+    ],
+    sections: [
+      {
+        title: '1. Bài toán và ảnh số',
+        body: `Một thanh thép 50 × 20 × 15 mm màu tối được đặt ngẫu nhiên (vị trí và góc) trên pallet. Camera nhìn thẳng xuống, máy tính tìm vật, đổi sang tọa độ robot, gửi cho robot gắp và đặt vào đồ gá với góc 0°.
+
+Bản gốc dùng camera Cognex hoặc camera thường + OpenCV. Trong phòng ảo bạn tự viết xử lý ảnh bằng JavaScript thuần:
+
+- \`camera.capture()\` → \`{ width, height, data }\`: ảnh **xám** 320 × 240, mỗi pixel 1 byte (0 = đen, 255 = trắng).
+- Pixel tại cột u, hàng v: \`data[v * width + u]\`. Trục u hướng sang phải, trục v hướng **xuống dưới**.
+- Mỗi pixel ứng với khoảng 0,625 mm trên mặt pallet.
+
+Trong ảnh có: nền pallet sáng (≈ 205), vật tối (≈ 55, khoảng 2500 pixel) và **3 điểm mốc** tròn Ø8 mm (≈ 130 pixel mỗi điểm) ở tọa độ robot đã biết: **M1 (160, 30)**, **M2 (290, 30)**, **M3 (160, 190)** mm.`,
+      },
+      {
+        title: '2. Ngưỡng hóa và vùng liên thông',
+        body: `### Ngưỡng hóa
+Pixel thuộc vật nếu \`data[i] < T\`. Chọn T nằm giữa mức nền và mức vật (ví dụ T ≈ 100). Có thể chọn T tự động bằng histogram (phương pháp Otsu) khi ánh sáng thay đổi.
+
+### Tách vùng liên thông (flood fill)
+Ảnh nhị phân có nhiều vùng tối rời nhau (vật + 3 điểm mốc). Gán nhãn cho từng vùng:
+
+1. Tạo mảng nhãn \`label\` cùng cỡ ảnh, ban đầu 0.
+2. Quét từng pixel; gặp pixel tối chưa có nhãn → tạo nhãn mới, đẩy pixel vào **ngăn xếp**.
+3. Lấy pixel khỏi ngăn xếp, xét 4 láng giềng (trái, phải, trên, dưới); láng giềng tối chưa nhãn thì gán nhãn và đẩy vào ngăn xếp.
+4. Trong lúc loang, cộng dồn các tổng cho mômen (mục 3) của vùng.
+
+Dùng ngăn xếp tường minh thay cho đệ quy: vùng 2500 pixel có thể làm tràn ngăn xếp gọi hàm.
+
+### Lọc vùng
+- Bỏ vùng rất nhỏ (nhiễu, vài pixel).
+- Vùng ~130 pixel là **điểm mốc** — giữ lại tâm của chúng để hiệu chuẩn.
+- Vùng **lớn nhất** là vật.`,
+      },
+      {
+        title: '3. Mômen ảnh: tâm và góc',
+        body: `Với mỗi vùng, coi mỗi pixel (u, v) có khối lượng 1:
+
+| Đại lượng | Công thức | Ý nghĩa |
+|---|---|---|
+| m00 | Σ 1 | diện tích (số pixel) |
+| m10, m01 | Σ u, Σ v | mômen bậc 1 |
+| ū, v̄ | m10 / m00, m01 / m00 | **tâm** vùng |
+| μ20 | Σ (u − ū)² | phân tán theo u |
+| μ02 | Σ (v − v̄)² | phân tán theo v |
+| μ11 | Σ (u − ū)(v − v̄) | tương quan u–v |
+
+Góc trục dài (trục quán tính chính), đo từ trục u về phía trục v:
+
+**θ = ½ · atan2(2μ11, μ20 − μ02)**
+
+Kết quả nằm trong (−90°, 90°]. Có thể tính μ từ các tổng thô để chỉ quét một lần: μ20 = Σu² − m00·ū², μ02 = Σv² − m00·v̄², μ11 = Σuv − m00·ū·v̄.
+
+### Chu kỳ 180°
+Thanh chữ nhật đối xứng: góc θ và θ + 180° là **cùng một vật**; nam châm gắp cũng đối xứng. Vì vậy luôn đưa góc về khoảng (−90°, 90°] — vừa đúng nghĩa, vừa tránh bắt khớp T xoay gần một vòng.
+
+Lưu ý: với vật gần tròn hoặc vuông (μ20 ≈ μ02, μ11 ≈ 0) góc không xác định — vì vậy vật trong bài là thanh dài.`,
+      },
+      {
+        title: '4. Hiệu chuẩn camera – robot',
+        body: `Trục ảnh **không trùng** trục robot: camera hơi xoay, chiều trục có thể bị đảo, gốc và tỉ lệ khác. Đừng đoán phép biến đổi — hãy **đo** nó bằng 3 điểm mốc.
+
+### Mô hình affine
+x = a·u + b·v + c
+y = d·u + e·v + f
+
+6 ẩn (a…f). Mỗi cặp điểm (u_i, v_i) ↔ (x_i, y_i) cho 2 phương trình → cần **3 điểm không thẳng hàng**. Hệ 6 phương trình tách thành hai hệ 3 × 3 có **cùng ma trận** A:
+
+| Hàng của A | Vế phải hệ 1 (ẩn a, b, c) | Vế phải hệ 2 (ẩn d, e, f) |
+|---|---|---|
+| u1, v1, 1 | x1 | y1 |
+| u2, v2, 1 | x2 | y2 |
+| u3, v3, 1 | x3 | y3 |
+
+Giải A·[a, b, c]ᵀ = [x1, x2, x3]ᵀ và A·[d, e, f]ᵀ = [y1, y2, y3]ᵀ bằng quy tắc Cramer hoặc khử Gauss (det A ≠ 0 khi 3 điểm không thẳng hàng).
+
+Affine bao gồm tịnh tiến, quay, tỉ lệ (kể cả khác nhau theo hai trục), trượt và lật — đủ cho camera nhìn vuông góc mặt phẳng làm việc.
+
+### Nhận diện điểm mốc nào là M1, M2, M3
+Ba tâm điểm mốc tìm được chưa có thứ tự. Dùng khoảng cách: M1–M2 = 130 mm, M1–M3 = 160 mm, M2–M3 ≈ 206 mm. Trong ảnh tỉ lệ khoảng cách vẫn giữ (gần như) nguyên: điểm **không** thuộc cạnh dài nhất là M1; trong hai điểm còn lại, điểm gần M1 hơn là M2.
+
+### Đổi góc ảnh → Rz robot
+Góc không biến đổi theo kiểu "cộng một hằng số" nếu trục bị lật. Cách chắc chắn: lấy vectơ hướng trên ảnh (cosθ, sinθ), nhân với **phần tuyến tính** [[a, b], [d, e]] → (dx, dy) trong hệ robot, rồi Rz = atan2(dy, dx). Cuối cùng đưa Rz về (−90°, 90°]. Nếu định thức a·e − b·d < 0 thì ảnh bị lật: góc tăng trên ảnh ứng với góc giảm trên robot.
+
+Kiểm tra: đưa tâm 3 điểm mốc qua \`pixelToRobot\` phải ra đúng tọa độ đã cho; sai lệch các điểm khác < 1,5 mm.`,
+      },
+      {
+        title: '5. Đồng bộ máy tính – robot',
+        body: `Robot chạy job **VISION** ở PLAY (các điểm P001, P011, P012, P013 đã dạy sẵn). Máy tính chỉ cần cung cấp điểm gắp **P010** và ra hiệu bằng biến **B000**:
+
+| Bước | Máy tính | Robot (job VISION) |
+|---|---|---|
+| 0 | | \`SET B000 0\`, về P001 (ra ngoài vùng camera), chờ \`JUMP *WAIT IF B000=0\` |
+| 1 | Chụp ảnh, tìm vật, tính (x, y, Rz) | đang chờ |
+| 2 | Ghi P010 (lệnh 0x7F) | |
+| 3 | Ghi B000 = 1 (lệnh 0x7A) | thoát vòng chờ |
+| 4 | Đọc B000 định kỳ (ví dụ mỗi 100 ms) | tiếp cận trên P010 50 mm (\`SFTON P012\`), hạ xuống, bật nam châm OT#1, nhấc lên, đặt vào đồ gá P011, về P001 |
+| 5 | Thấy B000 = 0 → chu trình xong | \`SET B000 0\`, quay lại chờ |
+
+Thứ tự **ghi P010 trước, bật B000 sau** là bắt buộc: nếu ngược lại robot có thể chạy tới P010 cũ. Ghi/đọc biến không cần REMOTE nên robot vẫn chạy ở PLAY.
+
+### Dữ liệu ghi P010 (0x7F, instance 10, service 0x02) — 13 int32
+kiểu **16 (BASE)**, 0, 0, 0, 0, X Y Z (µm), Rx Ry Rz (0,0001°), 0, 0. Điểm gắp: **[x, y, z = 25, Rx = 180, Ry = 0, Rz]** — mặt pallet z = 10 mm cộng chiều cao thanh 15 mm; Rx = 180° để dụng cụ hướng xuống.
+
+Vì job đặt vật vào đồ gá ở Rz = 0 và vật quay theo dụng cụ, Rz khi gắp phải bằng **góc của vật trong hệ robot** thì vật nằm thẳng trong đồ gá.
+
+### Lưu đồ \`cycle()\`
+1. \`img = camera.capture()\` (robot đang ở P001, ngoài khung hình)
+2. \`detect(img)\` → (u, v, θ); không thấy vật → báo lỗi, dừng
+3. (x, y) = \`pixelToRobot(u, v)\`; Rz = \`imageAngleToRobot(θ)\`
+4. \`writePosition(10, [x, y, 25, 180, 0, Rz])\`
+5. \`setByte(0, 1)\`
+6. Lặp: \`await sleep(100)\`; \`readByte(0)\` cho tới khi = 0 (đặt thời gian chờ tối đa, ví dụ 20 s)`,
+      },
+      {
+        title: '6. Nguồn sai số và kiểm thử',
+        body: `| Nguồn sai số | Biểu hiện | Cách giảm |
+|---|---|---|
+| Ngưỡng chọn kém, ánh sáng không đều | Vùng vật bị khuyết hoặc dính nền → tâm, góc lệch | Chọn ngưỡng theo histogram, kiểm tra diện tích vùng |
+| Lượng tử hóa pixel (0,625 mm/px) | Sai tâm ~0,1–0,3 mm, góc ~1° | Dùng mômen (trung bình nhiều pixel) thay vì góc cạnh |
+| Tâm điểm mốc sai, nhận nhầm M1/M2/M3 | Toàn bộ tọa độ bị lệch, quay, lật | Kiểm tra lại bằng chính 3 điểm mốc |
+| Méo ống kính, camera nghiêng | Sai tăng dần ra mép ảnh | Hiệu chuẩn nhiều điểm hơn, mô hình phi tuyến |
+| Thị sai theo chiều cao | Mặt trên vật cao hơn mặt mốc | Hiệu chuẩn ở đúng độ cao làm việc |
+| Nhầm chu kỳ 180° / chiều góc | Vật đặt vào đồ gá lệch 90° hoặc đối xứng | Đổi góc qua phần tuyến tính, chuẩn hóa (−90°, 90°] |
+| Chụp khi robot còn trong khung hình | Cánh tay bị coi là vật | Chỉ chụp khi B000 = 0 (robot ở P001) |
+| TCP, z gắp sai | Hụt vật hoặc va chạm | Kiểm tra tool, z = 25 mm |
+
+### Trình tự kiểm thử
+1. \`detect()\` trên vài ảnh, in ra (u, v, θ) và so với vị trí đặt vật.
+2. \`pixelToRobot()\` với tâm 3 điểm mốc.
+3. \`imageAngleToRobot()\` với vật ở 0°, 45°, −45°.
+4. Ghi P010 rồi xem trong pendant (biến vị trí) trước khi bật B000.
+5. Chạy \`cycle()\` với "Đặt vật ngẫu nhiên" nhiều lần; yêu cầu ±3 mm, ±3° trong đồ gá và không va chạm.`,
+      },
+    ],
+    quiz: [
+      { q: 'Ảnh 320 × 240 lưu trong mảng data. Giá trị pixel ở cột u = 10, hàng v = 2 là…', options: ['data[10 * 240 + 2]', 'data[2 * 320 + 10]', 'data[10 * 320 + 2]', 'data[2 * 240 + 10]'], answer: 1, explain: 'Ảnh lưu theo hàng: chỉ số = v · width + u = 2 · 320 + 10.' },
+      { q: 'Sau ngưỡng hóa có 4 vùng tối: ~2500, ~130, ~128, ~131 pixel. Vùng nào là vật?', options: ['Vùng ~130 pixel', 'Vùng ~2500 pixel', 'Gộp cả 4 vùng', 'Không xác định được'], answer: 1, explain: 'Thanh 50 × 20 mm ≈ 2560 pixel; ba vùng nhỏ là điểm mốc Ø8 mm, dùng cho hiệu chuẩn.' },
+      { q: 'Góc trục dài của vùng tính từ mômen trung tâm là…', options: ['atan2(μ02, μ20)', '½ · atan2(2μ11, μ20 − μ02)', 'atan2(m01, m10)', '2 · atan(μ11)'], answer: 1, explain: 'Hướng trục quán tính chính: θ = ½ · atan2(2μ11, μ20 − μ02), đo từ trục u về trục v.' },
+      { q: 'detect() trả θ = 100° cho thanh. Nên gửi góc nào?', options: ['100°', '−80°', '190°', '10°'], answer: 1, explain: 'Thanh đối xứng nên θ và θ − 180° là một; đưa về (−90°, 90°] → −80°, khớp T xoay ít hơn.' },
+      { q: 'Biến đổi affine pixel → robot có bao nhiêu ẩn và cần tối thiểu bao nhiêu điểm mốc?', options: ['4 ẩn, 2 điểm', '6 ẩn, 3 điểm không thẳng hàng', '9 ẩn, 4 điểm', '6 ẩn, 6 điểm'], answer: 1, explain: 'x = a·u + b·v + c, y = d·u + e·v + f: 6 ẩn; mỗi điểm cho 2 phương trình → 3 điểm không thẳng hàng.' },
+      { q: 'Thứ tự đúng trong một chu trình của máy tính là…', options: ['Bật B000 = 1 → ghi P010 → chờ', 'Ghi P010 → bật B000 = 1 → chờ B000 về 0', 'Ghi P010 → chờ B000 về 0 → bật B000 = 1', 'Bật servo → START job → ghi P010'], answer: 1, explain: 'Phải có P010 mới trước khi ra hiệu; robot đặt B000 = 0 khi xong, đó là tín hiệu bắt tay để chụp ảnh tiếp.' },
     ],
   },
 };

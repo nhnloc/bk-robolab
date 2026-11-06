@@ -1,7 +1,7 @@
 // Sơ đồ 2D dự phòng (máy không có WebGL): nhìn từ trên (XY) và nhìn ngang (XZ) — robot dạng que, vật, pallet,
 // băng tải, mâm xoay, thanh trượt. Cùng giao diện tối thiểu với MachineViewer: setSource, load, setView, applyTheme, dispose.
 import * as K from '../robot/kinematics.js';
-import { PALETTE, PUCK, CONVEYOR, ROTARY, GANTRY, BIN, slotXY } from '../sim/layout.js';
+import { PALETTE, PUCK, CONVEYOR, ROTARY, GANTRY, BIN, slotXY, VISION } from '../sim/layout.js';
 
 export class Robot2D {
   constructor(container, { machineId, cell }) {
@@ -47,10 +47,14 @@ export class Robot2D {
       const top = v === views[0];
       // bàn
       rect(-400, -420, 500, 380, -20, 0, C.grid);
-      if (this.machineId === 'motomini') {
+      if (this.machineId === 'motomini' || this.machineId === 'vision') {
         const [cx, cy] = PALETTE.center, [sx, sy] = PALETTE.size;
         rect(cx - sx / 2, cy - sy / 2, cx + sx / 2, cy + sy / 2, 0, PALETTE.top, C.obj);
-        if (top) for (const [n, [x, y]] of Object.entries(PALETTE.cells)) { const p = P([x, y, 0]); g.strokeStyle = C.txt; g.beginPath(); g.arc(p[0], p[1], 20 * s, 0, 7); g.stroke(); g.fillStyle = C.txt; g.fillText(n, p[0] + 22 * s, p[1] + 4); }
+        if (top && this.machineId === 'vision') {
+          for (const [x, y] of VISION.markers) { const p = P([x, y, 0]); g.fillStyle = '#111'; g.beginPath(); g.arc(p[0], p[1], Math.max(2, 4 * s), 0, 7); g.fill(); }
+          const [fx, fy] = VISION.fixture, a = P([fx - 30, fy - 12, 0]), b = P([fx + 30, fy + 12, 0]);
+          g.strokeStyle = '#e0a800'; g.lineWidth = 2; g.strokeRect(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
+        } else if (top) for (const [n, [x, y]] of Object.entries(PALETTE.cells)) { const p = P([x, y, 0]); g.strokeStyle = C.txt; g.beginPath(); g.arc(p[0], p[1], 20 * s, 0, 7); g.stroke(); g.fillStyle = C.txt; g.fillText(n, p[0] + 22 * s, p[1] + 4); }
       } else {
         rect(CONVEYOR.x0, CONVEYOR.y - CONVEYOR.width / 2, CONVEYOR.x1, CONVEYOR.y + CONVEYOR.width / 2, 0, CONVEYOR.top, '#2e7d4f');
         rect(BIN.center[0] - 45, BIN.center[1] - 45, BIN.center[0] + 45, BIN.center[1] + 45, 0, BIN.wall, C.obj);
@@ -68,8 +72,9 @@ export class Robot2D {
       for (const it of cell.items) {
         if (it.lost) continue;
         g.fillStyle = it.held ? '#e9a800' : C.puck;
-        if (top) { const p = P([it.x, it.y, 0]); g.beginPath(); g.arc(p[0], p[1], (PUCK.d / 2) * s, 0, 7); g.fill(); }
-        else rect(it.x - PUCK.d / 2, 0, it.x + PUCK.d / 2, 0, it.z, it.z + PUCK.h, g.fillStyle);
+        if (top && it.kind !== 'puck') { const [l, wd] = it.size, a = ((it.rotZ || 0) * Math.PI) / 180; const cs = [[1, 1], [1, -1], [-1, -1], [-1, 1]].map(([i, j]) => P([it.x + (i * l / 2) * Math.cos(a) - (j * wd / 2) * Math.sin(a), it.y + (i * l / 2) * Math.sin(a) + (j * wd / 2) * Math.cos(a), 0])); g.beginPath(); cs.forEach((q, k) => (k ? g.lineTo(...q) : g.moveTo(...q))); g.closePath(); g.fill(); }
+        else if (top) { const p = P([it.x, it.y, 0]); g.beginPath(); g.arc(p[0], p[1], (PUCK.d / 2) * s, 0, 7); g.fill(); }
+        else rect(it.x - it.size[0] / 2, 0, it.x + it.size[0] / 2, 0, it.z, it.z + it.size[2], g.fillStyle);
       }
       // robot
       g.lineCap = 'round'; g.lineJoin = 'round';

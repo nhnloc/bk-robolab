@@ -30,3 +30,22 @@ export function slotXY(k, a) {
   const t = (slotAngle(k, a) * Math.PI) / 180;
   return [ROTARY.center[0] + ROTARY.r * Math.cos(t), ROTARY.center[1] + ROTARY.r * Math.sin(t)];
 }
+
+/** Trạm vision (Bài 5): camera nhìn thẳng xuống vùng gắp, 3 điểm mốc hiệu chuẩn, đồ gá ở C. */
+export const VISION = {
+  bar: [50, 20, 15],                       // thanh thép l × w × h
+  pick: { x: [195, 265], y: [70, 150] },   // vùng đặt vật ngẫu nhiên
+  fixture: [230, -110, 0],                 // tâm đồ gá (x, y) và góc (độ)
+  markers: [[160, 30], [290, 30], [160, 190]],
+  markerR: 4,
+  cam: { w: 320, h: 240, mmPerPx: 0.625, center: [225, 110], tilt: 1.5 },
+};
+/** Robot (x, y) → pixel (u, v) của camera. */
+export function robotToPixel(x, y) {
+  const c = VISION.cam, f = (c.tilt * Math.PI) / 180, dx = x - c.center[0], dy = y - c.center[1];
+  return [c.w / 2 + (-dy * Math.cos(f) + dx * Math.sin(f)) / c.mmPerPx, c.h / 2 + (-dx * Math.cos(f) - dy * Math.sin(f)) / c.mmPerPx];
+}
+export function pixelToRobot(u, v) {
+  const c = VISION.cam, f = (c.tilt * Math.PI) / 180, a = (u - c.w / 2) * c.mmPerPx, b = (v - c.h / 2) * c.mmPerPx;
+  return [c.center[0] + a * Math.sin(f) - b * Math.cos(f), c.center[1] - a * Math.cos(f) - b * Math.sin(f)];
+}

@@ -26,10 +26,10 @@ export const COURSE = withTitle([
   { id: 'R07', part: 3, week: 7, level: 2, machineId: 'mechatro' },
   { id: 'R08', part: 3, week: 8, level: 3, machineId: 'mechatro' },
   { id: 'R09', part: 3, week: 9, level: 4, machineId: 'mechatro' },
-  { id: 'R10', part: 4, week: 10, level: 3, machineId: null },
-  { id: 'R11', part: 4, week: 11, level: 3, machineId: null },
+  { id: 'R10', part: 4, week: 10, level: 3, machineId: 'vision' },
+  { id: 'R11', part: 4, week: 11, level: 4, machineId: 'vision' },
 ], 'course.');
 
-export const MACHINE_IDS = ['motomini', 'mechatro'];
+export const MACHINE_IDS = ['motomini', 'mechatro', 'vision'];
 /** Tên máy theo ngôn ngữ hiện tại: MACHINE_TITLES[id]. */
 export const MACHINE_TITLES = Object.defineProperties({}, Object.fromEntries(MACHINE_IDS.map((id) => [id, { get: () => t('machine.' + id), enumerable: true }])));

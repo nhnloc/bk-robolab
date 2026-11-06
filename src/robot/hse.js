@@ -8,7 +8,7 @@ export const RESERVE2 = '99999999';
 
 export const CMD = {
   ALARM_READ: 0x70, STATUS_READ: 0x72, POS_READ: 0x75, IO_RW: 0x78,
-  VAR_B: 0x7A, VAR_I: 0x7B, VAR_D: 0x7C, VAR_R: 0x7D,
+  VAR_B: 0x7A, VAR_I: 0x7B, VAR_D: 0x7C, VAR_R: 0x7D, VAR_P: 0x7F,
   ALARM_RESET: 0x82, HOLD_SERVO: 0x83, CYCLE_SWITCH: 0x84, JOB_START: 0x86, JOB_SELECT: 0x87,
   MOVE_CART: 0x8A, MOVE_PULSE: 0x8B,
 };
@@ -168,6 +168,27 @@ export function handleRequest(rc, bytes) {
       const data = new Uint8Array(4); const dv = new DataView(data.buffer);
       if (t === 'B') data[0] = val; else if (t === 'I') dv.setInt16(0, val, true); else if (t === 'D') dv.setInt32(0, val, true); else dv.setFloat32(0, val, true);
       return R({ data }, `Đọc ${t}${String(n).padStart(3, '0')} = ${val}`);
+    }
+    case CMD.VAR_P: {
+      const n = req.instance;
+      if (n > 127) return R({ status: 0x08, added: 0x1011 }, 'Biến P: instance 0..127');
+      const nm = 'P' + String(n).padStart(3, '0');
+      if (req.service === SVC.SET_ALL || req.service === SVC.SET_SINGLE) {
+        if (!needData(52)) return R({ status: 0x08, added: 0x1014 }, 'Biến P: cần 52 byte (kiểu, cấu hình, tool, user, …, 8 trục)');
+        const g = (i) => v.getInt32(i * 4, true);
+        const type = g(0);
+        if (type === 0) rc.setP(n, { type: 'PULSE', q: K.pulseToDeg([g(5), g(6), g(7), g(8), g(9), g(10)]) });
+        else if (type === 16) rc.setP(n, { type: 'BASE', p: [g(5) / 1000, g(6) / 1000, g(7) / 1000, g(8) / 10000, g(9) / 10000, g(10) / 10000] });
+        else return R({ status: 0x08, added: 0x1015 }, 'Kiểu dữ liệu: 0 (xung) hoặc 16 (BASE)');
+        const pv = rc.getP(n);
+        return R({}, `Ghi ${nm} = ${(pv.type === 'BASE' ? pv.p : pv.q).map((x) => x.toFixed(1)).join(', ')}`);
+      }
+      const pv = rc.getP(n);
+      if (!pv) return R({ data: i32(new Array(13).fill(0)) }, `${nm} chưa có dữ liệu`);
+      const data = pv.type === 'BASE'
+        ? i32([16, 0, 0, 0, 0, pv.p[0] * 1000, pv.p[1] * 1000, pv.p[2] * 1000, pv.p[3] * 10000, pv.p[4] * 10000, pv.p[5] * 10000, 0, 0])
+        : i32([0, 0, 0, 0, 0, ...K.degToPulse(pv.q), 0, 0]);
+      return R({ data }, `Đọc ${nm}`);
     }
     case CMD.ALARM_RESET: {
       if (req.instance !== 1 && req.instance !== 2) return R({ status: 0x08, added: 0x1011 }, 'Reset báo động: instance 1');

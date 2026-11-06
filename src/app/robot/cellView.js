@@ -16,7 +16,7 @@ export function createCellView({ cell, readOnly = false, extraActions = [] }) {
   const views = h('div.view-btns', ...[['iso', 'Iso'], ['front', 'Trước'], ['side', 'Bên'], ['top', 'Trên']].map(([id, l]) => h('button.btn.sm', { type: 'button', onclick: () => viewer.setView(id) }, l)));
   const stage = h('div.viewer-stage', host, views, crash, h('div.viewer-loading', 'Đang tải mô hình 3D…'));
   let viewer;
-  const opts = { machineId: def.id, inputTags: [] };
+  const opts = { machineId: def.model || def.id, inputTags: [] };
   if (hasWebGL()) { try { viewer = new MachineViewer(host, opts); } catch (e) { console.info(e); viewer = null; } }
   if (!viewer) { host.replaceChildren(); viewer = new Robot2D(host, { ...opts, cell }); views.hidden = true; }
   let visual = null;
@@ -30,7 +30,7 @@ export function createCellView({ cell, readOnly = false, extraActions = [] }) {
   viewer.load().then(() => { stage.querySelector('.viewer-loading')?.remove(); addLabels(); }).catch((e) => console.warn(e));
   /** Nhãn ô pallet A1..C (trạm MotoMINI). */
   async function addLabels() {
-    if (def.id !== 'motomini' || !viewer.scene) return;
+    if ((def.model || def.id) !== 'motomini' || def.id === 'vision' || !viewer.scene) return;
     const THREE = await import('three');
     for (const [name, [x, y]] of Object.entries(PALETTE.cells)) {
       const c = document.createElement('canvas'); c.width = 96; c.height = 48;
@@ -61,10 +61,11 @@ export function createCellView({ cell, readOnly = false, extraActions = [] }) {
   const lamp = (tag, label, color = 'amber') => { const el = h('span.cp-lamp', { class: color, title: tag }, h('i'), h('small', label)); lampEls.set(tag, el); return el; };
   const box = (title, ...kids) => h('div.cp-box', h('div.cp-title', title), ...kids);
   const panels = [];
-  if (def.id === 'motomini') {
+  if (def.id === 'motomini' || def.id === 'vision') {
     panels.push(box('Control Panel',
       h('div.cp-row', ...[4, 5, 6, 7].map((i) => lamp('Q' + i, 'Q' + i, ['red', 'amber', 'green', 'blue'][i - 4]))),
-      h('div.cp-row', ...def.buttons.map(pb)),
+      h('div.cp-row', ...def.buttons.filter((b) => b.group !== 'sim').map(pb)),
+      def.buttons.some((b) => b.group === 'sim') ? h('div.cp-row', ...def.buttons.filter((b) => b.group === 'sim').map(pb)) : null,
       h('div.cp-note', 'I4..I7 → IN#5..IN#8 · Q4..Q7 ← OT#5..OT#8')));
   } else {
     const g = (grp) => def.buttons.filter((b) => b.group === grp);

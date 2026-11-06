@@ -38,9 +38,19 @@ export function starterProject(lab, prev = {}) {
   const from = (lab.inherit || []).map((id) => prev[id]).find(Boolean);
   if (s.jobs) { p.robot.jobs = s.jobs.map((j) => ({ ...j, lines: [...j.lines] })); p.robot.master = s.master || s.jobs[0]?.name || null; }
   if (lab.tools.includes('mpe')) p.mc = emptyMc(lab.cellId);
+  if (s.pvars) p.robot.pvars = JSON.parse(JSON.stringify(s.pvars));
+  if (lab.tools.includes('code')) p.pc = { code: s.code || '' };
   if (from) {
-    if (from.robot && from.cellId === lab.cellId) p.robot = JSON.parse(JSON.stringify(from.robot));
+    if (from.robot && from.cellId === lab.cellId) {
+      const r = JSON.parse(JSON.stringify(from.robot));
+      // giữ job / điểm có sẵn của lab mới nếu lab trước không có
+      for (const j of p.robot.jobs) if (!r.jobs.some((x) => x.name === j.name)) r.jobs.push(j);
+      r.pvars = { ...p.robot.pvars, ...r.pvars };
+      r.master = p.robot.master || r.master;
+      p.robot = r;
+    }
     if (from.mc && p.mc) p.mc = JSON.parse(JSON.stringify(from.mc));
+    if (from.pc?.code && p.pc) p.pc.code = from.pc.code.trimEnd() + '\n\n' + (s.codeAppend || '');
   }
   if (p.mc) {
     for (const b of s.dbs || []) if (!p.mc.blocks.some((x) => x.name === b.name)) p.mc.blocks.push(JSON.parse(JSON.stringify(b)));
@@ -509,9 +519,11 @@ const PART3 = [
 const fmtLim = (p) => (p ? `${p.softLimitEnable ? 'bật' : 'tắt'} ${p.softPos}/${p.softNeg}` : '—');
 void MC_HINT_DBS;
 
-export const LABS = [...PART1, ...PART2, ...PART3];
+import { PART4 } from './part4.js';
+export const LABS = [...PART1, ...PART2, ...PART3, ...PART4];
 export const PARTS = [
   { id: 1, title: 'Robot công nghiệp MotoMINI', weeks: '1–3' },
   { id: 2, title: 'Machine controller MP3300 và giao tiếp robot', weeks: '4–6' },
   { id: 3, title: 'Điều khiển servo và hệ luân chuyển vật', weeks: '7–9' },
+  { id: 4, title: 'Robot – máy tính và vision', weeks: '10–11' },
 ];

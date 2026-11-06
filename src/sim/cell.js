@@ -4,9 +4,17 @@ import * as K from '../robot/kinematics.js';
 import { RobotController } from '../robot/controller.js';
 import { handleRequest, HSE_PORT, hexDump } from '../robot/hse.js';
 import { MachineController } from '../mc/mp3300.js';
-import { TABLE_Z, PUCK, TOOL, PALETTE, CONVEYOR, ROTARY, GANTRY, BIN, slotXY } from './layout.js';
+import { TABLE_Z, PUCK, TOOL, PALETTE, CONVEYOR, ROTARY, GANTRY, BIN, slotXY, VISION, robotToPixel, pixelToRobot } from './layout.js';
 
 let uid = 1;
+const hOf = (it) => (it.size ? it.size[2] : PUCK.h);
+/** Điểm (x,y) nằm trên mặt vật? (trụ: theo bán kính; hộp: theo hình chữ nhật đã xoay) */
+export function footContains(it, x, y, shrink = 0.9) {
+  if (it.kind === 'puck') return Math.hypot(it.x - x, it.y - y) < (it.size?.[0] || PUCK.d) * shrink;
+  const a = -((it.rotZ || 0) * Math.PI) / 180, dx = x - it.x, dy = y - it.y;
+  const lx = dx * Math.cos(a) - dy * Math.sin(a), ly = dx * Math.sin(a) + dy * Math.cos(a);
+  return Math.abs(lx) <= (it.size[0] / 2) * shrink + 0.5 && Math.abs(ly) <= (it.size[1] / 2) * shrink + 0.5;
+}
 const newId = () => 'p' + uid++;
 const STEEL = '#8d99a6';
 
@@ -73,7 +81,7 @@ export class Cell {
     let best = this.surfaceAt(x, y);
     for (const p of this.items) {
       if (p === skip || p.held || p.lost) continue;
-      if (Math.hypot(p.x - x, p.y - y) < PUCK.d * 0.9) { const top = p.z + PUCK.h; if (top > best.z) best = { z: top, on: 'stack', under: p }; }
+      if (footContains(p, x, y)) { const top = p.z + hOf(p); if (top > best.z) best = { z: top, on: 'stack', under: p }; }
     }
     return best;
   }
@@ -84,7 +92,7 @@ export class Cell {
   checkRobot(q) {
     const { p } = this.tcp(q);
     const held = this.held;
-    const tipZ = p[2] - (held ? PUCK.h : 0);
+    const tipZ = p[2] - (held ? hOf(held) : 0);
     const sup = this.supportAt(p[0], p[1], held);
     if (tipZ < sup.z - 1.5) {
       this.stats.crashes++;
@@ -108,14 +116,27 @@ export class Cell {
     const { p, z } = this.tcp();
     if (on && !this.held) {
       if (z[2] > -0.9) return;   // dụng cụ phải hướng xuống
-      const c = this.items.find((it) => !it.held && !it.lost && Math.hypot(it.x - p[0], it.y - p[1]) < 8 && (p[2] - (it.z + PUCK.h)) > -2 && (p[2] - (it.z + PUCK.h)) < 6 && !this.items.some((o) => o !== it && !o.held && Math.hypot(o.x - it.x, o.y - it.y) < PUCK.d * 0.9 && o.z > it.z));
-      if (c) { this.held = c; c.held = 'robot'; c.on = 'robot'; this.detach(c); }
+      const near = (it) => (it.kind === 'puck' ? Math.hypot(it.x - p[0], it.y - p[1]) < 8 : footContains(it, p[0], p[1], 0.6));
+      const c = this.items.find((it) => !it.held && !it.lost && near(it) && (p[2] - (it.z + hOf(it))) > -2 && (p[2] - (it.z + hOf(it))) < 6 && !this.items.some((o) => o !== it && !o.held && footContains(o, it.x, it.y) && o.z > it.z));
+      if (c) {
+        this.held = c; c.held = 'robot'; c.on = 'robot'; this.detach(c);
+        // giữ nguyên độ lệch tâm và góc của vật so với dụng cụ
+        const ta = this.toolAngle();
+        c.grip = { dx: c.x - p[0], dy: c.y - p[1], da: (c.rotZ || 0) - ta, ta };
+      }
     } else if (!on && this.held) {
       const c = this.held; this.held = null; c.held = false;
       this.drop(c, 'robot');
     }
-    if (this.held) { this.held.x = p[0]; this.held.y = p[1]; this.held.z = p[2] - PUCK.h; }
+    if (this.held) {
+      const c = this.held, g = c.grip || { dx: 0, dy: 0, da: 0, ta: 0 };
+      const ta = this.toolAngle(), r = ((ta - g.ta) * Math.PI) / 180;
+      c.x = p[0] + g.dx * Math.cos(r) - g.dy * Math.sin(r); c.y = p[1] + g.dx * Math.sin(r) + g.dy * Math.cos(r);
+      c.z = p[2] - hOf(c); if (c.kind !== 'puck') c.rotZ = ta + g.da;
+    }
   }
+  /** Góc quay của dụng cụ quanh Z (độ) = hướng trục x dụng cụ chiếu lên mặt bàn. */
+  toolAngle() { const T = K.fk(this.robot.q, this.robot.tool); return Math.atan2(T[4], T[0]) * 180 / Math.PI; }
   detach() {}
   /** Thả vật: rơi xuống bề mặt đỡ bên dưới. */
   drop(c, by) {
@@ -435,7 +456,86 @@ function slotNear(a, ang) {
 }
 function mulberry(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
+/* ======================================================================= Trạm vision (Bài 4–5) */
+export class VisionCell extends MotoMiniCell {
+  constructor(opts = {}) {
+    super();
+    this.def = {
+      ...this.def, id: 'vision', model: 'motomini',
+      title: 'Trạm MotoMINI + camera',
+      summary: 'Robot MotoMINI điều khiển từ máy tính qua High-Speed Ethernet (UDP 10040). Camera nhìn thẳng xuống vùng gắp trên pallet; 3 điểm mốc đen dùng để hiệu chuẩn; đồ gá chữ nhật ở ô C.',
+      buttons: [...this.def.buttons, { id: 'NewPart', label: 'Đặt vật ngẫu nhiên', kind: 'momentary', color: 'grey', group: 'sim', action: 'newPart' }],
+    };
+    this.opts = opts;
+    this.rnd = opts.seed !== undefined ? mulberry(opts.seed) : Math.random;
+    this.setup('vision');
+  }
+  init() { this.held = null; if (this.rnd) this.setup('vision'); }
+  action(a) { if (a === 'newPart') this.setup('vision'); }
+  /** Đặt 1 thanh thép ở vị trí / góc ngẫu nhiên (hoặc cho trước) trong vùng gắp. */
+  setup(kind, pose) {
+    if (kind !== 'vision') return super.setup(kind);
+    this.items = this.items.filter((it) => it.placed);
+    this.held = null;
+    const r = this.rnd || Math.random;
+    const [x0, x1] = VISION.pick.x, [y0, y1] = VISION.pick.y;
+    const [x, y, a] = pose || [x0 + r() * (x1 - x0), y0 + r() * (y1 - y0), -85 + r() * 170];
+    this.part = { id: newId(), kind: 'product', x, y, z: PALETTE.top, rotZ: a, size: VISION.bar.slice(), color: '#3d4650', on: 'palette', label: '' };
+    this.items.push(this.part);
+    this.scene = 'vision';
+    return this.part;
+  }
+  /** Vật đã nằm đúng trong đồ gá? (lệch ≤ 3 mm, ≤ 3°) */
+  inFixture(it = this.part) {
+    if (!it || it.held) return false;
+    const [fx, fy, fa] = VISION.fixture;
+    const da = Math.abs(((((it.rotZ || 0) - fa) % 180) + 270) % 180 - 90);
+    return Math.hypot(it.x - fx, it.y - fy) <= 3 && da <= 3 && Math.abs(it.z - PALETTE.top) < 1;
+  }
+  /** Ảnh xám camera: { width, height, data: Uint8Array } (0 = đen, 255 = trắng). */
+  capture() {
+    const { w, h } = VISION.cam;
+    const data = new Uint8Array(w * h);
+    const parts = this.items.filter((it) => !it.lost && !it.held && it.z < PALETTE.top + 40);
+    const [pcx, pcy] = PALETTE.center, [psx, psy] = PALETTE.size;
+    const n = (this._shot = (this._shot || 0) + 1);
+    for (let v = 0; v < h; v++) for (let u = 0; u < w; u++) {
+      let acc = 0;
+      for (const [su, sv] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+        const [x, y] = pixelToRobot(u + su, v + sv);
+        let g = Math.abs(x - pcx) <= psx / 2 && Math.abs(y - pcy) <= psy / 2 ? 205 : 120;
+        for (const [mx, my] of VISION.markers) if (Math.hypot(x - mx, y - my) <= VISION.markerR) g = 25;
+        for (const it of parts) if (footContains(it, x, y, 1)) g = 55;
+        acc += g;
+      }
+      // nhiễu + độ sáng không đều
+      const noise = ((Math.sin(u * 12.9898 + v * 78.233 + n * 3.1) * 43758.5453) % 1) * 16 - 8;
+      data[v * w + u] = Math.max(0, Math.min(255, Math.round(acc / 4 + noise - (u / w) * 12)));
+    }
+    return { width: w, height: h, data, mmPerPxHint: undefined };
+  }
+  /** Đáp án thật (pixel) của vật — dùng cho chấm bài. */
+  truth(it = this.part) {
+    const [u, v] = robotToPixel(it.x, it.y);
+    const a = (it.rotZ || 0) * Math.PI / 180;
+    const [u2, v2] = robotToPixel(it.x + Math.cos(a), it.y + Math.sin(a));
+    return { u, v, angle: Math.atan2(v2 - v, u2 - u) * 180 / Math.PI };
+  }
+  onDropped(c) { if (c === this.part && this.inFixture(c)) { c.placed = true; this.stats.placed++; } }
+  getVisual() {
+    const v = super.getVisual();
+    const deco = [
+      ...VISION.markers.map(([x, y], i) => ({ id: 'mk' + i, kind: 'product', x, y, z: TABLE_Z + PALETTE.top, rotZ: 0, size: [8, 8, 0.6], color: '#111111' })),
+      { id: 'fx1', kind: 'product', x: VISION.fixture[0], y: VISION.fixture[1] + 13, z: TABLE_Z + PALETTE.top, rotZ: 0, size: [60, 4, 6], color: '#e0a800' },
+      { id: 'fx2', kind: 'product', x: VISION.fixture[0], y: VISION.fixture[1] - 13, z: TABLE_Z + PALETTE.top, rotZ: 0, size: [60, 4, 6], color: '#e0a800' },
+      { id: 'cam', kind: 'product', x: VISION.cam.center[0], y: VISION.cam.center[1], z: TABLE_Z + 420, rotZ: 0, size: [40, 40, 30], color: '#1f2933' },
+    ];
+    v.items.push(...deco);
+    return v;
+  }
+}
+
 /* ======================================================================= danh mục */
-const CELLS = { motomini: MotoMiniCell, mechatro: MechatroCell };
+const CELLS = { motomini: MotoMiniCell, mechatro: MechatroCell, vision: VisionCell };
 export function createCell(id, opts) { const C = CELLS[id]; if (!C) throw new Error('Không có trạm: ' + id); return new C(opts); }
 export const CELL_IDS = Object.keys(CELLS);

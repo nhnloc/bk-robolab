@@ -171,3 +171,21 @@ table.cfg.net tr { cursor: pointer; } table.cfg.net tr.sel { background: var(--s
   .pd-keys > * { flex: 1 1 180px; }
   .cell-bottom { grid-template-columns: 1fr; }
 }
+
+/* ---------------- PC App ---------------- */
+.pc-app { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr); gap: 8px; height: 100%; padding: 6px; box-sizing: border-box; }
+.pc-editor { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.pc-editor .mpe-code-wrap { flex: 1; min-height: 0; }
+.pc-editor .mpe-gutter { overflow: hidden; }
+.pc-side { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); }
+.pc-pane { flex: 1; overflow: auto; padding: 8px; min-height: 0; }
+.pc-gui { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.pc-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pc-row input.input { width: 60px; }
+.pc-pos th { font-size: 11px; white-space: nowrap; }
+.pc-cam { width: 100%; max-width: 480px; image-rendering: pixelated; border: 1px solid var(--border); background: #000; }
+.pc-console, .pc-net { font: 11.5px/1.45 var(--mono); }
+.pc-console .err { color: var(--err); } .pc-console .warn { color: var(--warn); } .pc-console .ok { color: var(--ok); } .pc-console .log { color: var(--text); }
+.pc-net > div { display: flex; flex-direction: column; border-bottom: 1px solid var(--border); padding: 3px 0; }
+.pc-net .tx { color: var(--accent); word-break: break-all; } .pc-net .rx { color: var(--ok); word-break: break-all; }
+@media (max-width: 1100px) { .pc-app { grid-template-columns: 1fr; } }

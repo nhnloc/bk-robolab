@@ -14,6 +14,7 @@ import { createResultsPanel } from '../machine/resultsPanel.js';
 import { createPendant } from '../robot/pendant.js';
 import { createCellView } from '../robot/cellView.js';
 import { createMpe } from '../mpe/mpe.js';
+import { createPcApp } from '../pc/pcApp.js';
 import { PALETTE, PUCK, slotXY } from '../../sim/layout.js';
 
 const errText = (e) => `${e.block || ''}${e.network !== undefined ? ` NW${+e.network + 1}` : ''}${e.line ? ` dòng ${e.line}` : ''}: ${trText(e.message)}`;
@@ -53,6 +54,8 @@ export async function labPage({ id }, { user }) {
   /* ---------- công cụ ---------- */
   const pendant = tools.includes('pendant') ? createPendant({ robot, cell, def, onChange: changed }) : null;
   const mpe = tools.includes('mpe') && project.mc ? createMpe({ project, sess, onChange: changed }) : null;
+  const pcApp = tools.includes('code') ? createPcApp({ project, sess, labId: lab.id, onChange: changed }) : null;
+  if (pcApp) disposers.push(() => pcApp.dispose());
   if (pendant) disposers.push(() => pendant.dispose());
   if (mpe) disposers.push(() => mpe.dispose());
 
@@ -161,7 +164,7 @@ export async function labPage({ id }, { user }) {
 
   /* ---------- bố cục ---------- */
   const results = createResultsPanel({ onGrade: () => grade(false), onSubmit: () => submit() });
-  const tabsDef = [pendant ? ['pendant', t('rl.pendant'), pendant.el] : null, mpe ? ['mpe', t('rl.mpe'), mpe.el] : null, ['res', t('rl.result'), results.el]].filter(Boolean);
+  const tabsDef = [pcApp ? ['pc', 'PC App', pcApp.el] : null, pendant ? ['pendant', t('rl.pendant'), pendant.el] : null, mpe ? ['mpe', t('rl.mpe'), mpe.el] : null, ['res', t('rl.result'), results.el]].filter(Boolean);
   const tabBtns = h('div.lab-tabs.rl-tabs', { role: 'tablist' }, ...tabsDef.map(([tid, label]) => h('button.rl-tab', { type: 'button', role: 'tab', dataset: { id: tid }, onclick: () => showTab(tid) }, label)));
   const panes = Object.fromEntries(tabsDef.map(([tid, , node]) => [tid, h('div.tab-pane.rl-pane', { hidden: true }, node)]));
   function showTab(tid) {
@@ -170,7 +173,7 @@ export async function labPage({ id }, { user }) {
     storage.set('bk.rl.tab.' + id, tid);
   }
   const left = h('div.rl-left', tabBtns, ...Object.values(panes));
-  const work = split({ dir: 'h', a: left, b: cv.el, ratio: tools.includes('mpe') ? 0.56 : 0.5, min: 320, key: 'rl-main' });
+  const work = split({ dir: 'h', a: left, b: cv.el, ratio: tools.includes('mpe') || tools.includes('code') ? 0.58 : 0.5, min: 320, key: 'rl-main' });
 
   const lecture = lectureFor(LECTURES, lab);
   const firstVisit = !!lecture && !hasSeenLab(user.id, lab.id);
