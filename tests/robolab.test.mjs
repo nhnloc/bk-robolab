@@ -7,6 +7,7 @@ import { compileMotion } from '../src/mc/motion.js';
 import { buildRequest, parseRequest, CMD } from '../src/robot/hse.js';
 import { LABS, starterProject, loadSolutions, solutionProject } from '../src/labs/index.js';
 import { gradeLab } from '../src/labs/grader.js';
+import { createCell } from '../src/sim/cell.js';
 
 let n = 0; const ok = (name) => { n++; console.log('✓', name); };
 
@@ -20,6 +21,26 @@ for (const q of [[10, 20, -10, 5, 70, 30], [-40, 35, 15, 0, 60, -20], [60, 10, 3
 }
 assert.deepEqual(K.fkPose([0, 0, 0, 0, 0, 0], { z: 50 }).map((v) => Math.round(v)), [275, 0, 334, 180, -90, 0]);
 ok('FK/IK MotoMINI');
+
+// Jog Descartes ở mọi tốc độ (LOW = 0,01 mm mỗi bước 1 ms — trước đây bị IK nuốt mất) + trợ giúp nam châm
+{
+  const c = createCell('motomini'); const R = c.robot;
+  R.setMode('TEACH'); R.servoOnReady(); R.enable(true); R.setCoord('BASE');
+  R.q = K.ik(K.poseToT([170, 110, 60, 180, 0, 0]), [33, 30, 0, 0, 60, 0], R.tool).q;
+  for (const [sp, mm] of [['LOW', 10], ['MED', 50]]) {
+    const z0 = R.pose()[2]; R.setSpeed(sp); R.jog(2, 1, true); for (let i = 0; i < 1000; i++) c.step(1); R.jog(2, 1, false);
+    assert.ok(Math.abs(R.pose()[2] - z0 - mm) < 0.5, `jog Z+ ${sp}: ${R.pose()[2] - z0}`);
+  }
+  R.q = K.ik(K.poseToT([170, 110, 33, 180, 0, 0]), R.q, R.tool).q; c.step(1);
+  assert.ok(c.gripHint().ready, 'nam châm sẵn sàng hút ở 3 mm trên vật A1');
+  // va chạm khi đang giữ vật → RESET → nhấc lên được (không báo va chạm lại)
+  R.OT[1] = true; c.step(5); assert.ok(c.held, 'đã hút vật');
+  R.setSpeed('MED'); R.jog(2, -1, true); for (let i = 0; i < 1500 && !R.alarms.length; i++) c.step(1); R.jog(2, -1, false);
+  assert.equal(R.alarms[0]?.code, 4100, 'va chạm khi hạ vật xuống pallet');
+  R.resetAlarm(); R.servoOnReady(); R.enable(true); R.jog(2, 1, true); for (let i = 0; i < 1000; i++) c.step(1); R.jog(2, 1, false);
+  assert.ok(!R.alarms.length && R.pose()[2] > 70, 'nhấc lên sau RESET');
+}
+ok('Jog Descartes + trợ giúp nam châm');
 
 assert.equal(parseLine('MOVJ P001 VJ=10.00').tags.VJ, 10);
 assert.throws(() => parseLine('MOVJ P001 V=10'));

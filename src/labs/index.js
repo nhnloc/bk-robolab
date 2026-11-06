@@ -105,7 +105,8 @@ const PART1 = [
     ],
     hints: [
       'Nam châm: menu IN/OUT → General Purpose Output, chọn OT#1 và nhấn INTERLOCK + SELECT (hoặc nút "Nam châm" cạnh màn hình).',
-      'Nam châm chỉ hút khi đầu dụng cụ hướng thẳng xuống và chạm mặt trên vật (lệch ≤ 8 mm).',
+      'Nam châm hút khi dụng cụ hướng thẳng xuống và đầu nam châm cách mặt vật 0…5 mm, lệch tâm ≤ 8 mm — không cần ấn xuống chạm vật (ấn quá 1,5 mm là va chạm). Bảng Robot bên dưới mô hình báo "Sẵn sàng hút" khi đủ điều kiện.',
+      'Ở Home dụng cụ nằm ngang (hướng +X). Để hướng xuống: hệ JOINT quay B tới khoảng +90°, rồi ở hệ CARTESIAN chỉnh Ry về 0 (Rx = 180).',
       'Xoay khớp B, T quá mức trên robot thật sẽ làm đứt dây dụng cụ — tập thói quen giữ góc hợp lý.',
       'Va chạm làm robot báo động 4100 và tắt servo: RESET báo động, nhấc robot lên bằng hệ JOINT rồi làm tiếp.',
     ],
@@ -117,7 +118,7 @@ const PART1 = [
     title: 'Dạy điểm và lập trình job INFORM gắp–thả',
     objectives: ['Dạy điểm (teach) và lưu vào biến vị trí P', 'Viết job bằng ngôn ngữ INFORM: MOVJ, MOVL, DOUT, TIMER, CALL, END', 'Chạy thử (TEST START) và chạy tự động (PLAY)', 'Tổ chức chương trình thành job chính và các job con'],
     tasks: [
-      'Dạy các điểm như Hình 13: P000 = điểm Home; P001, P003, P005, P007, P011 = điểm trung gian cao hơn điểm gắp/thả ~50 mm; P002, P004, P006, P008, P009, P010, P012… = điểm tiếp xúc / xếp chồng.',
+      'Dạy các điểm (dụng cụ hướng thẳng xuống): P000 = Home (mọi khớp 0). Ô A1: P001 trên cao ~50 mm, P002 điểm gắp. A2: P003 / P004. A3: P005 / P006. Ô B: P007 trên cao, P008 thả tầng 1, P009 tầng 2, P010 tầng 3. Ô C: P011 trên cao, P012 điểm thả. Điểm gắp/thả = TCP cách mặt vật hoặc mặt pallet 0…3 mm.',
       'Yêu cầu 2.1a — Job MAIN (cảnh "A1, A2"): gắp A1 thả vào B, gắp A2 thả vào C. Viết theo mẫu: MAIN gọi PICK-A1, PLACE-B, … (CALL JOB:…).',
       'Yêu cầu 2.1b — Job STACK (cảnh "A1, A2, A3"): gắp lần lượt A1, A2, A3 thả chồng lên nhau ở B. Kết thúc ở P000.',
       'Chạy thử từng job bằng INTERLOCK + TEST START (TEACH) rồi chạy tự động: gạt sang PLAY, SERVO ON READY, START.',
@@ -166,7 +167,7 @@ const PART1 = [
     title: 'Robot kết hợp I/O: chọn vật bằng công tắc, báo đèn',
     objectives: ['Đọc ngõ vào (WAIT, IF, JUMP … IF IN#) và ghi ngõ ra (DOUT, PULSE)', 'Dùng biến B để nhớ trạng thái, nhãn và vòng lặp', 'Phối hợp robot với Control Panel'],
     tasks: [
-      'Nối dây: IN#5..IN#8 của robot ← công tắc I4..I7; OT#5..OT#8 → đèn Q4..Q7 (Hình 14).',
+      'Nối dây: IN#5..IN#8 của robot ← công tắc I4..I7; OT#5..OT#8 → đèn Q4..Q7 (bảng I/O bên dưới).',
       'Yêu cầu 2.2a — Job MAIN (cảnh "A1, A2, A3", mọi công tắc OFF): khi người dùng bật ngẫu nhiên I4, I5, I6, robot gắp vật tương ứng ở A1, A2, A3 thả chồng lên nhau ở B. Sau mỗi lần thả, xuất 1 xung dài 1 s ra đèn Q4.',
       'Yêu cầu 2.2b — Job MAIN2: như câu a, thêm I7: I7 OFF → thả vào B (xung 1 s ra Q4); I7 ON → thả vào C (xung 1 s ra Q5). Vật ở B và ở C đều xếp chồng.',
       'Công tắc vẫn giữ ON sau khi robot đã gắp — chương trình phải nhớ vật nào đã gắp để không gắp lại ô rỗng.',

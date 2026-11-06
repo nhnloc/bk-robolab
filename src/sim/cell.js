@@ -46,7 +46,7 @@ export class Cell {
   setFault(id, on) { if (id in this.faults) { this.faults[id] = !!on; this.log(`${on ? 'Bật' : 'Tắt'} lỗi: ${id}`, 'info'); } }
 
   reset() {
-    this.items = []; this.events = []; this.netLog = [];
+    this.items = []; this.events = []; this.netLog = []; this._pen = 0;
     this.stats = { placed: 0, delivered: 0, drops: 0, crashes: 0, cycleTimeMs: 0, pulses: {} };
     const prog = this.robot.program;
     this.robot.resetState(); this.robot.loadProgram(prog);
@@ -94,7 +94,10 @@ export class Cell {
     const held = this.held;
     const tipZ = p[2] - (held ? hOf(held) : 0);
     const sup = this.supportAt(p[0], p[1], held);
-    if (tipZ < sup.z - 1.5) {
+    // chỉ báo va chạm khi lún sâu thêm — sau RESET được phép rút dụng cụ ra khỏi chỗ đang kẹt
+    const pen = sup.z - tipZ, prevPen = this._pen ?? 0;
+    this._pen = Math.max(0, pen);
+    if (pen > 1.5 && pen > prevPen + 1e-6) {
       this.stats.crashes++;
       const what = sup.on === 'stack' ? 'vật thao tác' : sup.on === 'conveyor' ? 'băng tải' : sup.on === 'rotary' ? 'mâm xoay' : sup.on === 'palette' ? 'pallet' : 'mặt bàn';
       this.log(`VA CHẠM: dụng cụ ${held ? '(đang giữ vật) ' : ''}đâm vào ${what} tại X=${p[0].toFixed(0)} Y=${p[1].toFixed(0)} Z=${p[2].toFixed(0)}`, 'error');
@@ -116,8 +119,7 @@ export class Cell {
     const { p, z } = this.tcp();
     if (on && !this.held) {
       if (z[2] > -0.9) return;   // dụng cụ phải hướng xuống
-      const near = (it) => (it.kind === 'puck' ? Math.hypot(it.x - p[0], it.y - p[1]) < 8 : footContains(it, p[0], p[1], 0.6));
-      const c = this.items.find((it) => !it.held && !it.lost && near(it) && (p[2] - (it.z + hOf(it))) > -2 && (p[2] - (it.z + hOf(it))) < 6 && !this.items.some((o) => o !== it && !o.held && footContains(o, it.x, it.y) && o.z > it.z));
+      const c = this.gripCandidate(p);
       if (c) {
         this.held = c; c.held = 'robot'; c.on = 'robot'; this.detach(c);
         // giữ nguyên độ lệch tâm và góc của vật so với dụng cụ
@@ -134,6 +136,19 @@ export class Cell {
       c.x = p[0] + g.dx * Math.cos(r) - g.dy * Math.sin(r); c.y = p[1] + g.dx * Math.sin(r) + g.dy * Math.cos(r);
       c.z = p[2] - hOf(c); if (c.kind !== 'puck') c.rotZ = ta + g.da;
     }
+  }
+  /** Vật nam châm sẽ hút nếu bật OT#1 tại TCP p (chưa xét hướng dụng cụ). */
+  gripCandidate(p) {
+    const near = (it) => (it.kind === 'puck' ? Math.hypot(it.x - p[0], it.y - p[1]) < 8 : footContains(it, p[0], p[1], 0.6));
+    return this.items.find((it) => !it.held && !it.lost && near(it) && (p[2] - (it.z + hOf(it))) > -2 && (p[2] - (it.z + hOf(it))) < 6 && !this.items.some((o) => o !== it && !o.held && footContains(o, it.x, it.y) && o.z > it.z)) || null;
+  }
+  /** Trợ giúp gắp cho giao diện: độ nghiêng dụng cụ so với phương thẳng đứng, khoảng cách tới bề mặt bên dưới, có hút được không. */
+  gripHint() {
+    const { p, z } = this.tcp();
+    const tilt = Math.acos(Math.max(-1, Math.min(1, -z[2]))) * 180 / Math.PI;
+    if (this.held) return { tilt, held: true };
+    const sup = this.supportAt(p[0], p[1]);
+    return { tilt, held: false, gap: p[2] - sup.z, onItem: sup.on === 'stack', ready: z[2] <= -0.9 && !!this.gripCandidate(p) };
   }
   /** Góc quay của dụng cụ quanh Z (độ) = hướng trục x dụng cụ chiếu lên mặt bàn. */
   toolAngle() { const T = K.fk(this.robot.q, this.robot.tool); return Math.atan2(T[4], T[0]) * 180 / Math.PI; }

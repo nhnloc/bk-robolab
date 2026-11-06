@@ -9,6 +9,18 @@ import { renderMd, mdInline } from '../components/md.js';
 import { getQuiz, setQuiz } from '../lectures.js';
 import { trMachine } from '../loc.js';
 
+/** Các bước "Quy trình" theo đúng công cụ của bài (bài robot) hoặc mặc định. */
+function howto(lab) {
+  const tools = lab.raw?.tools || lab.tools;
+  if (!tools) return [t('guide.h1'), t('guide.h2'), t('guide.h3'), t('guide.h4')];
+  const out = [];
+  if (tools.includes('code')) out.push(t('guide.hCode'));
+  if (tools.includes('pendant')) out.push(t('guide.hPendant'), t('guide.hKeys'));
+  if (tools.includes('mpe')) out.push(t('guide.h2'));
+  out.push(t('guide.h3'), t('guide.h4'));
+  return out;
+}
+
 export function createGuidePanel({ lab, def, lecture, userId, initialTab = 'task', onCollapse, onTab, onWide, onLocate }) {
   let { inputs, outputs } = machineIo(def);
   if (def?.robotIo) {
@@ -34,7 +46,7 @@ export function createGuidePanel({ lab, def, lecture, userId, initialTab = 'task
       h('details', { open: true }, h('summary', `${t('io.inputs')} (${inputs.length})`), ioTable(inputs)),
       h('details', { open: true }, h('summary', `${t('io.outputs')} (${outputs.length})`), ioTable(outputs))),
     lab.hints?.length ? h('section', h('details', h('summary', t('guide.hints')), h('ul', lab.hints.map((x) => h('li', x))))) : null,
-    h('section.guide-tips', h('h3', t('guide.howto')), h('ol', [t('guide.h1'), t('guide.h2'), t('guide.h3'), t('guide.h4')].map((x) => h('li', x)))));
+    h('section.guide-tips', h('h3', t('guide.howto')), h('ol', howto(lab).map((x) => h('li', x)))));
 
   /* ---------- Bài giảng ---------- */
   const lecPane = h('div.guide-body.guide-lecture', { role: 'tabpanel' });

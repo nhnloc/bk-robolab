@@ -88,6 +88,17 @@ export function createCellView({ cell, readOnly = false, extraActions = [] }) {
   const evLog = h('ul.ev-log');
   const statusBox = h('div.cp-status', box('Robot', robotRo), cell.mc ? box('Trục servo', axesRo) : null, cell.mc ? box('I/O machine controller', ioRo) : null, box('Sự kiện', evLog));
 
+  /** Dòng trợ giúp gắp vật bằng nam châm. */
+  function gripLine() {
+    const g = cell.gripHint?.();
+    if (!g) return null;
+    let txt, cls = 'muted';
+    if (g.held) { txt = 'Nam châm đang giữ vật'; cls = 'ok-text'; }
+    else if (g.tilt > 26) txt = `Dụng cụ nghiêng ${g.tilt.toFixed(0)}° so với phương thẳng đứng — cần hướng xuống để hút (Rx ≈ 180, Ry ≈ 0)`;
+    else if (g.ready) { txt = `Sẵn sàng hút: cách mặt vật ${Math.max(0, g.gap).toFixed(1)} mm — bật OT#1`; cls = 'ok-text'; }
+    else txt = `${g.onItem ? 'Mặt vật' : 'Bề mặt'} bên dưới cách ${g.gap.toFixed(1)} mm${g.onItem ? ' (hút được khi còn 0…5 mm và đúng tâm ±8 mm)' : ''}`;
+    return h('span.ro-grip', { class: cls }, txt);
+  }
   function refresh() {
     for (const [id, el] of btnEls) el.classList.toggle('on', !!cell.panel[id]);
     const outs = cell.outs ? cell.outs() : {};
@@ -96,9 +107,10 @@ export function createCellView({ cell, readOnly = false, extraActions = [] }) {
     const ps = r.pose();
     robotRo.replaceChildren(
       ...['S', 'L', 'U', 'R', 'B', 'T'].map((n, i) => h('span', h('small', n), h('b.mono', f1(r.q[i])))),
-      ...['X', 'Y', 'Z'].map((n, i) => h('span', h('small', n), h('b.mono', f1(ps[i])))),
+      ...['X', 'Y', 'Z', 'Rx', 'Ry', 'Rz'].map((n, i) => h('span', h('small', n), h('b.mono', f1(ps[i])))),
       h('span', h('small', 'OT#1'), h('b', { class: r.OT[1] ? 'ok-text' : 'muted' }, r.OT[1] ? 'ON' : 'OFF')),
-      h('span', h('small', 'Mode'), h('b', r.mode)), h('span', h('small', 'Servo'), h('b', { class: r.servo ? 'ok-text' : '' }, r.servo ? 'ON' : 'OFF')));
+      h('span', h('small', 'Mode'), h('b', r.mode)), h('span', h('small', 'Servo'), h('b', { class: r.servo ? 'ok-text' : '' }, r.servo ? 'ON' : 'OFF')),
+      gripLine());
     if (cell.mc) {
       axesRo.replaceChildren(...Object.values(cell.mc.axes).map((a) => h('div.ax-row', { class: a.alarm ? 'alarm' : '' },
         h('b', a.name), h('span.mono', `${f1(a.pos)} ${a.hw.unit === 'deg' ? '°' : 'mm'}`),

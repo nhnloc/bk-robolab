@@ -183,7 +183,7 @@ export class RobotController {
   /** Nút trục: axis 0..5, dir ±1. */
   jog(axis, dir, down) {
     const k = `${axis}:${dir}`;
-    if (!down) { this.jogKeys.delete(k); return; }
+    if (!down) { this.jogKeys.delete(k); if (!this.jogKeys.size) this.jogT = null; return; }
     if (this.mode !== 'TEACH') { this.msg('Chỉ điều khiển bằng tay ở chế độ TEACH', 'warn'); return; }
     if (!this.servo) { this.msg('Servo chưa bật: nhấn SERVO ON READY rồi giữ Enable', 'warn'); return; }
     if (this.exec?.running) return;
@@ -203,7 +203,9 @@ export class RobotController {
   }
   /** Bước jog Descartes: lin (0..2, mm) hoặc rot (0..2, độ) trong hệ tọa độ hiện tại. */
   cartStep(lin, rot, amount) {
-    const T = K.fk(this.q, this.tool);
+    // Đích Descartes được cộng dồn qua các bước 1 ms (bước LOW chỉ 0,01 mm — nhỏ hơn sai số dừng của IK,
+    // nếu tính lại từ FK mỗi bước thì robot sẽ không nhúc nhích).
+    const T = this.jogT && this.jogT.coord === this.coord ? this.jogT.T : K.fk(this.q, this.tool);
     let F;   // ma trận quay của khung tham chiếu (cột = trục)
     if (this.coord === 'TOOL') F = T;
     else if (this.coord === 'USER') F = K.userFrameT(this.userFrame);
@@ -223,10 +225,12 @@ export class RobotController {
       }
     }
     const r = K.ik(Td, this.q, this.tool, { iters: 30 });
-    if (!r.ok || r.err[0] > 0.5) { this.msg('Không di chuyển tiếp được: ngoài tầm với / gần điểm kỳ dị / chạm giới hạn khớp', 'warn'); this.jogKeys.clear(); return false; }
+    if (!r.ok || r.err[0] > 0.5) { this.msg('Không di chuyển tiếp được: ngoài tầm với / gần điểm kỳ dị / chạm giới hạn khớp', 'warn'); this.jogKeys.clear(); this.jogT = null; return false; }
     // không cho nhảy khớp lớn (đổi cấu hình)
-    if (r.q.some((v, i) => Math.abs(v - this.q[i]) > 10)) { this.msg('Gần điểm kỳ dị — chuyển sang hệ JOINT', 'warn'); this.jogKeys.clear(); return false; }
-    return this.tryJoint(r.q);
+    if (r.q.some((v, i) => Math.abs(v - this.q[i]) > 10)) { this.msg('Gần điểm kỳ dị — chuyển sang hệ JOINT', 'warn'); this.jogKeys.clear(); this.jogT = null; return false; }
+    const ok = this.tryJoint(r.q);
+    this.jogT = ok && this.jogKeys.size ? { T: Td, coord: this.coord } : null;
+    return ok;
   }
 
   /* ---------------- chạy chương trình ---------------- */
@@ -378,6 +382,7 @@ export class RobotController {
     this.time += dt;
     for (const p of this.pulses) if (this.time >= p.until) { this.OT[p.n] = false; p.done = true; }
     this.pulses = this.pulses.filter((p) => !p.done);
+    if (!this.jogKeys.size) this.jogT = null;
     if (!this.servo) { this.motion = null; return; }
     // jog
     if (this.jogKeys.size && this.mode === 'TEACH' && this.enableHeld) {

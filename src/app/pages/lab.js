@@ -48,7 +48,8 @@ export async function labPage({ id }, { user }) {
 
   /* ---------- lưu ---------- */
   const saveState = h('span.save-state.muted.small');
-  const autosave = debounce(() => { api.saveProject(id, project).then(() => { saveState.textContent = t('lab.saved', { time: fmtTime() }); }).catch((e) => console.warn(e)); }, 800);
+  let resetting = false;
+  const autosave = debounce(() => { if (resetting) return; api.saveProject(id, project).then(() => { saveState.textContent = t('lab.saved', { time: fmtTime() }); }).catch((e) => console.warn(e)); }, 800);
   const changed = () => { saveState.textContent = t('lab.saving'); autosave(); };
   disposers.push(() => autosave.flush?.());
 
@@ -94,10 +95,19 @@ export async function labPage({ id }, { user }) {
     sceneSel ? h('span.tb-sep') : null, sceneSel,
     h('span.tb-sep'), btnDemo,
     h('span.spacer'), saveState,
-    h('button.btn.ghost', { type: 'button', title: t('rl.resetCellTip'), onclick: resetCell }, icon('reset', { size: 15 }), h('span.hide-mid', t('rl.resetCell'))),
+    h('button.btn.ghost', { type: 'button', title: t('rl.resetCellTip'), onclick: resetCell }, icon('reset', { size: 15 }), h('span.hide-lg', t('rl.resetCell'))),
+    h('button.btn.ghost', { type: 'button', title: 'Bỏ toàn bộ chương trình đã làm của bài này, nạp lại bản khởi đầu', onclick: restoreStarter }, icon('undo', { size: 15 }), h('span.hide-lg', 'Làm lại từ đầu')),
     h('button.btn', { type: 'button', onclick: () => grade(false) }, icon('check', { size: 15 }), h('span.hide-mid', t('rl.check'))),
     h('button.btn.primary', { type: 'button', onclick: () => submit() }, icon('send', { size: 15 }), t('lab.submit')));
 
+  async function restoreStarter() {
+    if (!(await confirmBox('Làm lại từ đầu', `Xóa mọi job, điểm P, ladder, motion, mã PC đã làm ở ${lab.id} và nạp lại bản khởi đầu? Không hoàn tác được (bài đã nộp vẫn giữ nguyên).`, 'Làm lại'))) return;
+    resetting = true; autosave.cancel();
+    const prev = {};
+    for (const pid of raw.inherit || []) { const p = await api.getProject(pid); if (p) prev[pid] = p; }
+    await api.saveProject(id, starterFor(eng, lab, def, prev));
+    location.reload();
+  }
   function resetCell() {
     const wasRun = cell.mc?.state === 'RUN';
     cell.reset();

@@ -117,10 +117,13 @@ Khi xoay Rx/Ry/Rz trong CARTESIAN, **vị trí TCP đứng yên**, chỉ hướn
         body: `- **Enable**: giữ chuột trên nút Enable hoặc giữ phím **Space**. Thả ra là servo tắt — giống công tắc thật.
 - **Phím trục**: giữ chuột trên phím; ở mức INCH mỗi lần nhấn đi một bước nhỏ.
 - **Nam châm**: menu IN/OUT → General Purpose Output, trỏ vào **OT#1**, nhấn INTERLOCK + SELECT (hoặc nút "Nam châm" cạnh màn hình).
-- Nam châm chỉ hút khi dụng cụ **hướng thẳng xuống** và chạm mặt trên vật (lệch tâm không quá 8 mm). Vật thao tác là trụ thép Ø30 × 20 mm.
+- Nam châm chỉ hút khi dụng cụ **hướng thẳng xuống** và đầu nam châm cách mặt trên vật **0…5 mm** (lệch tâm không quá 8 mm). Không cần ấn chạm: hạ quá mặt vật 1,5 mm là va chạm. Vật thao tác là trụ thép Ø30 × 20 mm.
+- Bảng **Robot** dưới mô hình hiện Rx, Ry, Rz, độ nghiêng dụng cụ và khoảng cách tới mặt vật bên dưới; khi đủ điều kiện sẽ báo "Sẵn sàng hút".
 - Va chạm → báo động 4100, servo tắt. Nhấn RESET, bật lại servo, nhấc robot lên bằng hệ JOINT rồi làm tiếp.
 
-Mẹo gắp vật: dùng hệ CARTESIAN, đưa TCP tới **phía trên** vật vài cm ở mức MED, rồi hạ Z ở mức LOW/INCH cho tới khi chạm.`,
+Mẹo gắp vật: ở Home dụng cụ nằm ngang, nên trước tiên quay khớp B khoảng +90° (JOINT) rồi chỉnh Ry về 0 ở hệ CARTESIAN để dụng cụ hướng thẳng xuống (Rx = 180, Ry = 0). Đưa TCP tới **phía trên** vật vài cm ở mức MED, rồi hạ Z ở mức LOW/INCH cho tới khi bảng Robot báo "Sẵn sàng hút" (Z ≈ 30–34 mm với vật trên pallet).
+
+Bàn phím: khi tab Teach Pendant đang mở, giữ **Space** = Enable; **Q/A, W/S, E/D, R/F, T/G, Y/H** = trục 1…6 chiều +/−. Mỗi phím trục trên pendant có ghi chữ phím tương ứng.`,
       },
     ],
     quiz: [

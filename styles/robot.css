@@ -3,6 +3,7 @@
 :root[data-theme="dark"] { --pd-body: #232b33; --pd-key: #3a4652; --pd-screen: #10161c; --pd-screen-t: #dfe7ee; }
 
 .lab-page.robo .lab-main { display: flex; flex-direction: column; min-height: 0; }
+.lab-page.robo .lab-main > .split { flex: 1 1 auto; min-height: 0; }
 .rl-left { display: flex; flex-direction: column; min-height: 0; height: 100%; }
 .rl-tabs { display: flex; gap: 2px; padding: 4px 6px 0; border-bottom: 1px solid var(--border); background: var(--header); }
 .rl-tab, .mpe-tab { border: 1px solid transparent; border-bottom: none; background: none; padding: 6px 14px; border-radius: 6px 6px 0 0; color: var(--muted); font: inherit; cursor: pointer; }
@@ -82,6 +83,7 @@
 .pd-content .pk.primary { background: var(--accent); color: #fff; }
 .pd-content .pk.on { background: #e8b600; color: #1b232b; }
 .pk.sm { padding: 4px 8px; }
+.pk-kb { display: block; font: 500 9px/1 var(--mono, monospace); opacity: .55; margin-top: 2px; }
 .pk:hover { filter: brightness(1.12); }
 .pk.down, .pk:active { transform: translateY(2px); box-shadow: none; filter: brightness(1.25); }
 .pk:disabled { opacity: .5; }
@@ -208,3 +210,6 @@ table.cfg.net tr { cursor: pointer; } table.cfg.net tr.sel { background: var(--s
 .demo-seek { flex: 1; }
 .demo-ctrl select { width: auto; }
 @media (max-width: 900px) { .demo-body { grid-template-columns: 1fr; grid-template-rows: 1fr 200px; } .demo-right { border-left: none; border-top: 1px solid var(--border); } }
+
+.ro-grid .ro-grip { grid-column: 1 / -1; font-size: 11px; line-height: 1.3; }
+@media (max-width: 1500px) { .hide-lg { display: none; } }

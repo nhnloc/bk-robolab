@@ -38,9 +38,12 @@ export function createPcApp({ project, sess, labId, onChange = () => {}, readOnl
   }
   async function call(name, args = [], quiet = false) {
     if (!compiled && !load()) return undefined;
+    const lastFrame = cell.netLog[cell.netLog.length - 1];
     const r = await callSafe(api[name], args, { name });
     if (!r.ok) { out(r.error, 'err'); return undefined; }
     if (!quiet) out(`${name}(${args.map((a) => JSON.stringify(a)).join(', ')}) → ${r.value === undefined ? 'undefined' : JSON.stringify(r.value)}`);
+    if (!quiet && r.value === undefined && cell.netLog[cell.netLog.length - 1] === lastFrame && cell.netLog !== undefined)
+      out(`  (${name} không trả gì và chưa gửi khung UDP nào — hàm còn để TODO, hoặc quên await request(...)?)`, 'warn');
     return r.value;
   }
 

@@ -14,6 +14,7 @@ const AXIS_LABELS = {
 };
 const COORD_NAME = { JOINT: 'JOINT', BASE: 'CARTESIAN', TOOL: 'TOOL', USER: 'USER' };
 const KEYMAP = { q: [0, 1], a: [0, -1], w: [1, 1], s: [1, -1], e: [2, 1], d: [2, -1], r: [3, 1], f: [3, -1], t: [4, 1], g: [4, -1], y: [5, 1], h: [5, -1] };
+const KEY_OF = Object.fromEntries(Object.entries(KEYMAP).map(([k, [a, d]]) => [`${a}:${d}`, k.toUpperCase()]));
 const f1 = (v) => (Math.abs(v) < 0.005 ? 0 : v).toFixed(2);
 
 /**
@@ -72,7 +73,7 @@ export function createPendant({ robot, cell, def, onChange = () => {}, readOnly 
     };
     axisGrid.append(mk(-1), mk(1));
   }
-  const enableBtn = holdBtn('ENABLE', 'enable', () => { robot.enable(true); refresh(); }, () => { robot.enable(false); refresh(); }, 'Công tắc Enable 3 vị trí — giữ để bật servo (phím Space)');
+  const enableBtn = holdBtn('ENABLE\n(giữ Space)', 'enable', () => { robot.enable(true); refresh(); }, () => { robot.enable(false); refresh(); }, 'Công tắc Enable 3 vị trí — giữ để bật servo (phím Space)');
   const ilBtn = holdBtn('INTER\nLOCK', 'il', () => { interlock = true; }, () => { interlock = false; }, 'INTERLOCK');
   const testBtn = holdBtn('TEST\nSTART', 'test', () => { if (!interlock) { robot.msg('Giữ INTERLOCK cùng lúc với TEST START', 'warn'); return; } robot.testStart(true); }, () => robot.testStart(false), 'INTERLOCK + TEST START: chạy thử khi giữ');
   const fwdBtn = holdBtn('FWD', 'fwd', () => fwd(true), () => fwd(false), 'Tới điểm tiếp theo của job / điểm đang chọn (giữ)');
@@ -105,7 +106,8 @@ export function createPendant({ robot, cell, def, onChange = () => {}, readOnly 
   const typing = (e) => /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
   const keysDown = new Set();
   const onKeyDown = (e) => {
-    if (readOnly || typing(e) || !el.contains(document.activeElement) && !el.matches(':hover')) return;
+    // nhận phím khi pendant đang hiển thị (không cần di chuột lên pendant), trừ lúc gõ chữ hoặc có hộp thoại
+    if (readOnly || typing(e) || !el.isConnected || el.offsetParent === null || document.querySelector('.demo-overlay, [role="dialog"][aria-modal="true"]')) return;
     const k = e.key.toLowerCase();
     if (e.code === 'Space') { e.preventDefault(); if (!keysDown.has('space')) { keysDown.add('space'); robot.enable(true); refresh(); } return; }
     if (KEYMAP[k] && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); if (!keysDown.has(k)) { keysDown.add(k); robot.jog(KEYMAP[k][0], KEYMAP[k][1], true); } }
@@ -152,6 +154,14 @@ export function createPendant({ robot, cell, def, onChange = () => {}, readOnly 
     const informMenu = h('details.pd-inform', h('summary.pk.sm', 'INFORM LIST'),
       h('div.pd-inform-list', INFORM_LIST.map((g) => h('div', h('b.small', g.group), h('div.pd-inform-items', g.items.map(([op, tpl, d]) => h('button.btn.xs', { type: 'button', title: d, onclick: (e) => { buffer = tpl; e.target.closest('details').open = false; render(); setTimeout(() => content.querySelector('.pd-buf')?.focus(), 0); } }, op)))))));
     const data = h('datalist#pd-inform', INFORM_LIST.flatMap((g) => g.items.map(([, tpl]) => h('option', { value: tpl }))));
+    function teachInsert(op) {
+      if (readOnly) return;
+      let n = 1; while (n < 128 && robot.getP(n)) n++;   // P000 để dành cho Home
+      if (n >= 128) { toast('Hết biến P trống', 'err'); return; }
+      robot.teachP(n);
+      buffer = op === 'MOVJ' ? `MOVJ ${pName(n)} VJ=25.00` : `MOVL ${pName(n)} V=100.0`;
+      edit('insert');
+    }
     function edit(kind) {
       if (readOnly) return;
       const i = robot.cursor.line;
@@ -165,6 +175,9 @@ export function createPendant({ robot, cell, def, onChange = () => {}, readOnly 
       requestAnimationFrame(() => content.querySelector('.pd-lines li.cur')?.scrollIntoView({ block: 'nearest' }));
     }
     return [head, list, h('div.pd-row.pd-bufrow', informMenu, buf, data),
+      h('div.pd-row', key('＋ MOVJ tại đây', '', () => teachInsert('MOVJ'), 'Lưu vị trí hiện tại vào biến P trống kế tiếp và chèn MOVJ tới điểm đó sau con trỏ'),
+        key('＋ MOVL tại đây', '', () => teachInsert('MOVL'), 'Lưu vị trí hiện tại vào biến P trống kế tiếp và chèn MOVL tới điểm đó sau con trỏ'),
+        h('span.muted.small', 'dạy điểm + chèn lệnh trong một lần nhấn')),
       h('div.pd-row', key('INSERT', '', () => edit('insert'), 'Chèn dòng đệm vào sau con trỏ (Enter)'), key('MODIFY', '', () => edit('modify'), 'Thay dòng tại con trỏ bằng dòng đệm'), key('DELETE', '', () => edit('delete'), 'Xóa dòng tại con trỏ'),
         h('span.spacer'), comp.errors.length ? h('span.err-text.small', `${comp.errors.length} lỗi cú pháp`) : h('span.ok-text.small', 'Cú pháp OK'))];
   }
@@ -261,7 +274,7 @@ export function createPendant({ robot, cell, def, onChange = () => {}, readOnly 
     const st = robot.status();
     modeSel.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.m === st.mode));
     const lbl = AXIS_LABELS[st.coord];
-    for (const { b, i, dir } of axisBtns) b.textContent = `${lbl[i]}${dir > 0 ? '+' : '−'}`;
+    for (const { b, i, dir } of axisBtns) b.replaceChildren(`${lbl[i]}${dir > 0 ? '+' : '−'}`, h('small.pk-kb', KEY_OF[`${i}:${dir}`]));
     speedLbl.textContent = st.speed;
     btnStart.classList.toggle('lit', st.running);
     btnHold.classList.toggle('lit', st.hold || !!(robot.exec?.held && !st.running && robot.exec.stack?.length));
