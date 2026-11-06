@@ -148,7 +148,7 @@ export const PART4 = [
       'Yêu cầu 2.6 — forwardKinematics(q): tính tọa độ TCP từ góc khớp; so sánh với readCartesian() (sai lệch < 0,5 mm).',
     ],
     hints: [
-      'Thông số hình học MotoMINI ở tư thế 0 (mọi khớp = 0): trục S thẳng đứng qua gốc; trục L ở (20, 0, 103) theo +Y; trục U ở (20, 0, 268) theo −Y; trục R dọc cánh tay theo −X; trục B ở (185, 0, 268) theo +Y; trục T theo −X; mặt bích x = 225; TCP cách mặt bích 50 mm → (275, 0, 268).',
+      'Thông số hình học MotoMINI ở tư thế 0 (mọi khớp = 0): trục S thẳng đứng qua gốc; trục L ở (20, 0, 169) theo +Y; trục U ở (20, 0, 334) theo −Y; trục R dọc cánh tay theo −X; trục B ở (185, 0, 334) theo +Y; trục T theo −X; mặt bích x = 225; TCP cách mặt bích 50 mm → (275, 0, 334).',
       'Có thể tính động học thuận bằng nhân ma trận quay quanh từng trục (tích hàm mũ) hoặc lập bảng DH — chỉ cần đúng vị trí TCP.',
       'Số âm trong int32: DataView.setInt32(offset, value, true) tự xử lý bù 2.',
       'Mở tab Giám sát / Nhật ký của PC App để xem khung gửi và nhận dạng hex.',

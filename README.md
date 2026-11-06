@@ -60,6 +60,6 @@ Lời giải mẫu ở `private/solutions.js` (không đưa lên git).
 
 ## Ghi chú
 
-- Mô hình MotoMINI hiện là mô hình tham số dựng trong FreeCAD theo kích thước khớp thật (165/165/40 mm). Có file STEP chính hãng thì có thể thay hình học, giữ nguyên tên node và gốc trục.
+- Mô hình MotoMINI lấy từ file STEP chính hãng Yaskawa (`../YASKAWA/cad/MotoMINI_asm.stp`, không đưa vào repo), mỗi trục một khâu; nếu thiếu file thì `tools/freecad/motomini_robot.py` dựng lại mô hình tham số. Kích thước khớp theo CAD: trục L cao 169 mm, lệch 20 mm, cánh tay 165/165 mm, B → mặt bích 40 mm.
 - Giao diện robot/MPE720 hiện chỉ có tiếng Việt (nút EN đổi phần khung chung và tên lab).
 - Mật khẩu giảng viên dùng chung `data/teacher.json` chép từ BK-AutoLab.

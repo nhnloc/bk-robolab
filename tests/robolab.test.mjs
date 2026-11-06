@@ -18,7 +18,7 @@ for (const q of [[10, 20, -10, 5, 70, 30], [-40, 35, 15, 0, 60, -20], [60, 10, 3
   const p = K.pos(K.fk(r.q, { z: 50 })), p0 = K.pos(T);
   assert.ok(Math.hypot(p[0] - p0[0], p[1] - p0[1], p[2] - p0[2]) < 0.05);
 }
-assert.deepEqual(K.fkPose([0, 0, 0, 0, 0, 0], { z: 50 }).map((v) => Math.round(v)), [275, 0, 268, 180, -90, 0]);
+assert.deepEqual(K.fkPose([0, 0, 0, 0, 0, 0], { z: 50 }).map((v) => Math.round(v)), [275, 0, 334, 180, -90, 0]);
 ok('FK/IK MotoMINI');
 
 assert.equal(parseLine('MOVJ P001 VJ=10.00').tags.VJ, 10);

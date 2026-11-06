@@ -17,7 +17,7 @@ PAL.update({
 })
 
 Z0 = 750.0                  # table top = robot base bottom
-ZL = Z0 + 103.0             # L axis height (853)
+ZL = Z0 + 169.0             # L axis height (919) - from the Yaskawa STEP
 ZU = ZL + 165.0             # U axis height (1018)
 XL = 20.0                   # L/U axis X offset
 XB = 185.0                  # B axis X
@@ -42,8 +42,46 @@ def xcyl(r, y, z, x0, x1, ch=0.0):
     return cyl(r, V(x0, y, z), V(x1, y, z), ch)
 
 
+STEP = os.path.abspath(os.path.join(ROOT, '..', 'YASKAWA', 'cad', 'MotoMINI_asm.stp'))
+_CAD = {}
+
+
+def cad_links():
+    """Yaskawa MotoMINI STEP (one solid per axis, Pro/E frame: Y up, X forward, S axis at x=50.5,
+    wrist B = -90 deg i.e. flange facing down) -> {BASE,S,L,U,R,B,T: shape in FreeCAD world, zero pose}."""
+    if _CAD or not os.path.exists(STEP):
+        return _CAD
+    import Import
+    tmp = App.newDocument('mm_step_tmp')
+    try:
+        Import.insert(STEP, tmp.Name)
+        to_fc = App.Placement(App.Matrix(1, 0, 0, -50.5, 0, 0, -1, 0, 0, 1, 0, Z0, 0, 0, 0, 1))
+        # wrist: rotate B and T +90 deg about the B axis (CAD z through (235.5, 334)) -> flange along +X
+        wrist = App.Placement(V(0, 0, 0), App.Rotation(V(0, 0, 1), 90), V(235.5, 334.0, 0))
+        for o in tmp.Objects:
+            if o.TypeId != 'Part::Feature' or not o.Label.endswith('_AXIS'):
+                continue
+            sh = o.Shape.copy()
+            k = o.Label.split('_')[0]
+            if k in ('B', 'T'):
+                sh.Placement = wrist.multiply(sh.Placement)
+            sh.Placement = to_fc.multiply(sh.Placement)
+            _CAD[k] = sh
+    finally:
+        App.closeDocument(tmp.Name)
+    return _CAD
+
+
 def robot(m):
-    """add the MotoMINI (static base + link_S..link_T nodes) to Machine m"""
+    """add the MotoMINI (static base + link_S..link_T nodes) to Machine m.
+    Uses the Yaskawa STEP (YASKAWA/cad/MotoMINI_asm.stp) when present, else parametric geometry."""
+    cad = cad_links()
+    if cad:
+        m.st([(cad['BASE'], 'yaskawa')])
+        for k in 'SLURB':
+            m.node('link_' + k, AXES['link_' + k][1], _meta('link_' + k), [(cad[k], 'yaskawa')], quality=(0.5, 0.25))
+        m.node('link_T', AXES['link_T'][1], _meta('link_T'), [(cad['T'], 'jcap')] + _magnet(), quality=(0.5, 0.25))
+        return _refs()
     # ---------------------------------------------------------------- static base (not part of link_S)
     m.st([(cyl(60, V(0, 0, Z0), V(0, 0, Z0 + 60), ch=3), 'yaskawa'),
           (box(-75, -75, Z0, 75, 75, Z0 + 8, ch=2), 'yaskawa'),
@@ -96,12 +134,19 @@ def robot(m):
     m.node('link_B', AXES['link_B'][1], _meta('link_B'), B)
     # ---------------------------------------------------------------- link_T: flange + magnet gripper
     T = [(xcyl(15, 0, ZU, XF - 10, XF), 'jcap'),
-         (box(XF - 8, 13, ZU - 3, XF - 2, 16.5, ZU + 3), 'yblue'),        # orientation mark
-         (xcyl(18, 0, ZU, XF, XF + 6, ch=1), 'nickel'),                   # tool adapter plate
-         (xcyl(12, 0, ZU, XF + 6, XTCP - 8), 'valve'),                    # magnet body
-         (box(XF + 14, -15, ZU - 4, XF + 30, 15, ZU + 4, ch=1), 'valve'),  # cable boss
-         (xcyl(12, 0, ZU, XTCP - 8, XTCP), 'red')]                        # magnet pole (tip)
+         (box(XF - 8, 13, ZU - 3, XF - 2, 16.5, ZU + 3), 'yblue')] + _magnet()   # orientation mark
     m.node('link_T', AXES['link_T'][1], _meta('link_T'), T)
+    return _refs()
+
+
+def _magnet():
+    return [(xcyl(18, 0, ZU, XF, XF + 6, ch=1), 'nickel'),                   # tool adapter plate
+            (xcyl(12, 0, ZU, XF + 6, XTCP - 8), 'valve'),                    # magnet body
+            (box(XF + 14, -15, ZU - 4, XF + 30, 15, ZU + 4, ch=1), 'valve'),  # cable boss
+            (xcyl(12, 0, ZU, XTCP - 8, XTCP), 'red')]                        # magnet pole (tip)
+
+
+def _refs():
     return {'baseFC': [0, 0, Z0], 'tcpZeroFC': [XTCP, 0, ZU], 'flangeX': XF,
             'axesFC': {n: {'axis': a, 'point': [p.x, p.y, p.z]} for n, (a, p, _) in AXES.items()}}
 

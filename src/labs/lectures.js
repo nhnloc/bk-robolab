@@ -1123,13 +1123,13 @@ Góc (độ) = xung ÷ (xung/độ). Tỉ lệ khác nhau vì tỉ số truyền
 | Khớp | Hướng trục (dương theo quy tắc bàn tay phải) | Một điểm trên trục (mm) |
 |---|---|---|
 | S | +Z | (0, 0, 0) |
-| L | +Y | (20, 0, 103) |
-| U | −Y | (20, 0, 268) |
-| R | −X | (20, 0, 268) |
-| B | +Y | (185, 0, 268) |
-| T | −X | (185, 0, 268) |
+| L | +Y | (20, 0, 169) |
+| U | −Y | (20, 0, 334) |
+| R | −X | (20, 0, 334) |
+| B | +Y | (185, 0, 334) |
+| T | −X | (185, 0, 334) |
 
-Mặt bích ở x = 225; TCP cách mặt bích 50 mm → **p0 = (275, 0, 268)**.
+Mặt bích ở x = 225; TCP cách mặt bích 50 mm → **p0 = (275, 0, 334)**.
 
 ### Cách 1 — quay điểm TCP quanh từng trục (tích hàm mũ)
 Ở tư thế 0 các trục đã biết. Quay khớp T trước rồi lần lượt B, R, U, L, S — mỗi khớp sau (gần đế hơn) mang theo toàn bộ phần phía ngoài, nên trục của nó vẫn ở vị trí tư thế 0:
@@ -1139,7 +1139,7 @@ Mặt bích ở x = 225; TCP cách mặt bích 50 mm → **p0 = (275, 0, 268)**.
 
 Trong đó Rot(w, θ)·v theo công thức Rodrigues: v·cosθ + (w × v)·sinθ + w·(w·v)·(1 − cosθ). Viết dạng ma trận: T = e^(ξ1θ1)·…·e^(ξ6θ6)·M — đây là **tích các hàm mũ** (product of exponentials); M là tư thế TCP ở 0.
 
-Kiểm tra nhanh: q = 0 → (275, 0, 268); chỉ S = 90° → (0, 275, 268).
+Kiểm tra nhanh: q = 0 → (275, 0, 334); chỉ S = 90° → (0, 275, 334).
 
 ### Cách 2 — bảng Denavit–Hartenberg
 Đặt hệ trục cho từng khâu theo quy ước DH, lập bảng (θ, d, a, α) và nhân 6 ma trận A_i. Gốc góc và chiều quay của từng khớp phải khớp với bộ điều khiển (ví dụ U quay theo −Y), nên thường phải cộng hằng số hoặc đổi dấu θ. Kết quả chỉ cần đúng **vị trí TCP**.

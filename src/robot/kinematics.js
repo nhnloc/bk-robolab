@@ -6,7 +6,7 @@ export const DEG = Math.PI / 180;
 
 /** Thông số hình học (mm) ở tư thế 0: L-arm thẳng đứng, U-arm nằm ngang hướng +X, mặt bích hướng +X. */
 export const GEOM = {
-  baseH: 103,      // mặt đáy → trục L
+  baseH: 169,      // mặt đáy → trục L (theo CAD STEP chính hãng)
   sOff: 20,        // lệch trục L so với trục S theo X
   lArm: 165,       // trục L → trục U
   uArm: 165,       // trục U → trục B

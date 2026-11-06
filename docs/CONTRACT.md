@@ -11,13 +11,13 @@ Tư thế 0: L-arm đứng, U-arm nằm ngang hướng +X, mặt bích hướng 
 | Khớp | Điểm (mm, BASE) | Trục | Giới hạn (°) | Xung/độ |
 |---|---|---|---|---|
 | S | (0, 0, 0) | +Z | ±170 | 34816/30 |
-| L | (20, 0, 103) | +Y | −85..90 | 102400/90 |
-| U | (20, 0, 268) | −Y | −50..90 | 51200/90 |
-| R | (20, 0, 268) | −X | ±140 | 10204/30 |
-| B | (185, 0, 268) | +Y | −30..210 | 10204/30 |
-| T | (185, 0, 268) | −X | ±360 | 10204/30 |
+| L | (20, 0, 169) | +Y | −85..90 | 102400/90 |
+| U | (20, 0, 334) | −Y | −50..90 | 51200/90 |
+| R | (20, 0, 334) | −X | ±140 | 10204/30 |
+| B | (185, 0, 334) | +Y | −30..210 | 10204/30 |
+| T | (185, 0, 334) | −X | ±360 | 10204/30 |
 
-Mặt bích tại x = 225; dụng cụ nam châm Z = 50 mm → TCP (275, 0, 268) ở tư thế 0. Góc Rx, Ry, Rz: R = Rz·Ry·Rx. FK = tích hàm mũ; IK = bình phương tối thiểu tắt dần (Jacobian hình học).
+Mặt bích tại x = 225; dụng cụ nam châm Z = 50 mm → TCP (275, 0, 334) ở tư thế 0. Góc Rx, Ry, Rz: R = Rz·Ry·Rx. FK = tích hàm mũ; IK = bình phương tối thiểu tắt dần (Jacobian hình học).
 
 Node GLB: `link_S … link_T` (rotate, travel 1, giá trị = độ, chuỗi cha–con), gốc node = điểm trên trục.
 
