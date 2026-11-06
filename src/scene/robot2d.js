@@ -27,7 +27,7 @@ export class Robot2D {
   }
   draw(g, w, h) {
     const dark = document.documentElement.dataset.theme === 'dark';
-    const C = { bg: dark ? '#1b2229' : '#eef2f5', grid: dark ? '#2a333c' : '#d7dee5', txt: dark ? '#c9d3dc' : '#38434e', arm: '#e9a800', arm2: dark ? '#dde3ea' : '#4a5866', puck: '#8d99a6', obj: dark ? '#46525e' : '#c3ccd5' };
+    const C = { bg: dark ? '#1b2229' : '#eef2f5', grid: dark ? '#2a333c' : '#d7dee5', txt: dark ? '#c9d3dc' : '#38434e', arm: '#e9a800', arm2: dark ? '#3d8bfd' : '#1565c0', puck: '#8d99a6', obj: dark ? '#46525e' : '#c3ccd5' };
     g.fillStyle = C.bg; g.fillRect(0, 0, w, h);
     const cell = this.cell, r = cell.robot;
     const frames = []; const T = K.fk(r.q, r.tool, frames);

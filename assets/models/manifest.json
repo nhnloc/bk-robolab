@@ -53,7 +53,7 @@
     "fov": 45.0
    },
    "triangles": 66536,
-   "bytes": 1847004,
+   "bytes": 1847008,
    "nodes": {
     "link_S": {
      "type": "rotate",
@@ -368,7 +368,7 @@
     "fov": 45.0
    },
    "triangles": 86558,
-   "bytes": 2552060,
+   "bytes": 2552064,
    "nodes": {
     "link_S": {
      "type": "rotate",

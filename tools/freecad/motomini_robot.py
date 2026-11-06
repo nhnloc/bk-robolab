@@ -9,7 +9,7 @@ Flange face x = 225, magnet tool tip (TCP) x = 275."""
 from lib import *
 
 PAL.update({
-    'yaskawa': ('#DDE3EA', 0.10, 0.42),   # robot body light blue-grey
+    'yaskawa': ('#1565C0', 0.15, 0.38),   # robot body - Yaskawa blue
     'jcap':    ('#2E3338', 0.15, 0.55),   # dark joint caps
     'servo':   ('#3A3F45', 0.35, 0.45),   # servo motors dark grey
     'ctrl':    ('#E4E7EA', 0.05, 0.55),   # YRC1000micro housing
