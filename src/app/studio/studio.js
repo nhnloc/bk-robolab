@@ -1,4 +1,4 @@
-// PLC Studio (giao diện kiểu “portal” kỹ thuật): cây project | trình soạn (tab tài liệu) | thư viện lệnh,
+// Trình soạn ladder (tab Ladder của MPE720 ảo): cây project | trình soạn (tab tài liệu) | thư viện lệnh,
 // ô Thuộc tính/Thông tin/Chẩn đoán ở dưới. Quản lý undo/redo, clipboard, monitor.
 import { h, clone } from '../dom.js';
 import { t } from '../i18n.js';

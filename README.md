@@ -29,6 +29,16 @@ R10–R11 thay Qt C++ của tài liệu gốc bằng JavaScript chạy ngay tron
 
 R06–R09 tự kế thừa chương trình robot/MC của lab trước khi sinh viên mở lần đầu.
 
+## Chạy thử mẫu
+
+Trên trang lab có nút **Chạy thử mẫu**: phát lại trạm chạy theo lời giải mẫu (chạy / tạm dừng, chạy lại, tốc độ 0,5–4×, tua, nhật ký diễn biến có chú thích — bấm một dòng để tua tới). Băng ghi ở `assets/demos/<lab>.json` chỉ có hình ảnh trạm và sự kiện, **không có chương trình lời giải**, nên đưa lên web được. R01 (thao tác bằng tay) không có băng ghi.
+
+Ghi lại (máy giảng viên, cần `private/solutions.js`) mỗi khi sửa lời giải, mô phỏng hoặc kịch bản chấm:
+```bash
+node tools/record-demos.mjs          # mọi lab (hoặc: node tools/record-demos.mjs R07 R09)
+```
+Script chỉ ghi lab có lời giải đạt 100/100.
+
 ## Kiểm thử
 
 ```bash

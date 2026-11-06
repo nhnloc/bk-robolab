@@ -1,0 +1,62 @@
+{
+ "R02": {
+  "duration": 27500,
+  "frames": 276,
+  "notes": 13,
+  "bytes": 64789
+ },
+ "R03": {
+  "duration": 105900,
+  "frames": 1060,
+  "notes": 23,
+  "bytes": 247222
+ },
+ "R04": {
+  "duration": 12900,
+  "frames": 130,
+  "notes": 10,
+  "bytes": 48441
+ },
+ "R05": {
+  "duration": 32500,
+  "frames": 326,
+  "notes": 15,
+  "bytes": 137091
+ },
+ "R06": {
+  "duration": 18700,
+  "frames": 188,
+  "notes": 21,
+  "bytes": 74734
+ },
+ "R07": {
+  "duration": 32300,
+  "frames": 324,
+  "notes": 37,
+  "bytes": 134872
+ },
+ "R08": {
+  "duration": 45300,
+  "frames": 454,
+  "notes": 23,
+  "bytes": 168514
+ },
+ "R09": {
+  "duration": 136600,
+  "frames": 1367,
+  "notes": 38,
+  "bytes": 689949
+ },
+ "R10": {
+  "duration": 3400,
+  "frames": 35,
+  "notes": 11,
+  "bytes": 12955
+ },
+ "R11": {
+  "duration": 24300,
+  "frames": 244,
+  "notes": 10,
+  "bytes": 82537
+ }
+}

@@ -15,6 +15,7 @@ import { createPendant } from '../robot/pendant.js';
 import { createCellView } from '../robot/cellView.js';
 import { createMpe } from '../mpe/mpe.js';
 import { createPcApp } from '../pc/pcApp.js';
+import { openDemo, demoIndex } from '../robot/demoPlayer.js';
 import { PALETTE, PUCK, slotXY } from '../../sim/layout.js';
 
 const errText = (e) => `${e.block || ''}${e.network !== undefined ? ` NW${+e.network + 1}` : ''}${e.line ? ` dòng ${e.line}` : ''}: ${trText(e.message)}`;
@@ -82,6 +83,8 @@ export async function labPage({ id }, { user }) {
     h('button.btn', { type: 'button', onclick: () => download(), title: 'Nạp chương trình + cấu hình xuống MP3300 (Ctrl+L)' }, icon('download', { size: 15 }), h('span.hide-mid', t('lab.download'))),
     h('div.cpu-box', stLed, stText), btnRun, btnStop, btnMon,
   ] : [];
+  const btnDemo = h('button.btn.demo-btn', { type: 'button', disabled: true, title: 'Chưa có bản chạy thử mẫu', onclick: () => openDemo(lab.id).catch((e) => toast(e.message, 'err')) }, icon('film', { size: 15 }), h('span.hide-mid', 'Chạy thử mẫu'));
+  demoIndex().then((idx) => { if (idx[lab.id]) { btnDemo.disabled = false; btnDemo.title = 'Xem trạm chạy theo lời giải mẫu (không có code) trước khi tự lập trình'; } });
   const sceneSel = raw.setup?.scenes?.length > 1 ? h('label.small.scene-sel', t('rl.scene') + ' ',
     h('select.input.sm', { onchange: (e) => { cell.setup(e.target.value); toast('Đã đặt lại vật trên pallet', 'info', 1500); } },
       raw.setup.scenes.map((s) => h('option', { value: s, selected: s === raw.setup.scene }, t('rl.scene' + s))))) : null;
@@ -89,6 +92,7 @@ export async function labPage({ id }, { user }) {
     h('a.btn.ghost.sm', { href: '#/home', title: t('nav.home') }, icon('chevronL', { size: 14 }), h('span.lab-tb-id', lab.id)),
     ...mcTools,
     sceneSel ? h('span.tb-sep') : null, sceneSel,
+    h('span.tb-sep'), btnDemo,
     h('span.spacer'), saveState,
     h('button.btn.ghost', { type: 'button', title: t('rl.resetCellTip'), onclick: resetCell }, icon('reset', { size: 15 }), h('span.hide-mid', t('rl.resetCell'))),
     h('button.btn', { type: 'button', onclick: () => grade(false) }, icon('check', { size: 15 }), h('span.hide-mid', t('rl.check'))),

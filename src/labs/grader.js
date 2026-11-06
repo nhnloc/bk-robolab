@@ -5,9 +5,9 @@ import { checkProgram } from '../robot/inform.js';
 import { PALETTE } from '../sim/layout.js';
 
 /** @returns {Promise<{score, max, checks:[{id,label,points,max,pass,detail}], log, stats}>} */
-export async function gradeLab(lab, project, { onProgress, live } = {}) {
+export async function gradeLab(lab, project, { onProgress, live, hooks } = {}) {
   const checks = [];
-  const add = (id, label, max, pass, detail = '') => checks.push({ id, label, max, points: pass ? max : 0, pass: !!pass, detail: detail || '' });
+  const add = (id, label, max, pass, detail = '') => { const ck = { id, label, max, points: pass ? max : 0, pass: !!pass, detail: detail || '' }; checks.push(ck); hooks?.onAdd?.(ck); };
   const g = lab.grading || {};
   const finish = (cell) => {
     let score = checks.reduce((a, c) => a + c.points, 0);
@@ -24,6 +24,7 @@ export async function gradeLab(lab, project, { onProgress, live } = {}) {
   const usesRobot = lab.tools.includes('pendant');
   if (usesRobot) add('robot', 'Job robot không lỗi cú pháp', 5, hard.length === 0, hard.slice(0, 3).map((e) => `${e.job} ${String(e.line).padStart(4, '0')}: ${e.message}`).join('\n'));
   const cell = createCell(lab.cellId, { seed: 7, ...(lab.cellOpts || {}) });
+  hooks?.onCell?.(cell);
   const rt = new CellRuntime(cell, { manualClock: true });
   cell.robot.loadProgram(JSON.parse(JSON.stringify(project.robot || { jobs: [], pvars: {} })));
   let mcOk = true;
@@ -44,6 +45,7 @@ export async function gradeLab(lab, project, { onProgress, live } = {}) {
     for (let t = 0; t < ms; t += step) {
       const d = Math.min(step, ms - t);
       rt.runFor(d); elapsed += d;
+      hooks?.onTick?.(cell, elapsed);
       for (const tm of timers) { tm.acc += d; while (tm.acc >= tm.every) { tm.acc -= tm.every; tm.fn(); } }
       if (elapsed % 2000 < step) { onProgress?.(Math.min(0.98, elapsed / total)); if (typeof window !== 'undefined') await new Promise((r) => setTimeout(r, 0)); }
     }

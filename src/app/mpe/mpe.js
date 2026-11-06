@@ -1,4 +1,4 @@
-// MPE720 ảo: Ladder (dùng PLC Studio) · Motion (MPM###) · Cấu hình module (SVC trục, 218IFD) · Test Run · Giám sát mạng / thanh ghi.
+// MPE720 ảo: Ladder (trình soạn LAD) · Motion (MPM###) · Cấu hình module (SVC trục, 218IFD) · Test Run · Giám sát mạng / thanh ghi.
 import { h } from '../dom.js';
 import { toast, confirmBox } from '../components/ui.js';
 import { createStudio } from '../studio/studio.js';
@@ -20,7 +20,7 @@ export function createMpe({ project, sess, onChange = () => {}, readOnly = false
   const cell = sess.cell;
   let tab = initialTab;
 
-  /* ---------------- Ladder (PLC Studio) ---------------- */
+  /* ---------------- Ladder ---------------- */
   const view = () => ({ schema: 'bk-autolab/project@1', name: 'MP3300', cpu: 'MP3300', tags: mc().tags, blocks: mc().blocks, watch: mc().watch || [] });
   const studio = createStudio({
     project: view(), readOnly, getPlc: () => ctrl.plc,

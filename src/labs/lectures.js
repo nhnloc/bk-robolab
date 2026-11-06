@@ -427,7 +427,7 @@ Số thanh ghi MPE720 là số thứ tự **dạng hex**: DI_10 → IB0000A, DI_
       },
       {
         title: '5. Ladder trong mô phỏng và bài băng tải',
-        body: `Mô phỏng dùng trình soạn ladder kiểu soft-PLC thay cho MPE720:
+        body: `Trong tab **MPE720 → Ladder** của phòng ảo:
 - Ngõ vào/ra đã có sẵn trong bảng tag với tên **DI_xx / DO_xx**, địa chỉ hiển thị dạng %I / %Q; cột chú thích ghi thanh ghi MPE720 tương ứng (IB000xx / OB000xx).
 - Bit nhớ tự khai báo là tag **%M**, ví dụ \`M_Run\` tại %M0.0 (tương đương một bit MB trong MPE720).
 - Có tiếp điểm NO, NC, sườn lên **P**, sườn xuống **N**, cuộn dây thường, Set, Reset, timer TON/TOF, bộ đếm, so sánh, MOVE.
